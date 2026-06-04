@@ -187,7 +187,7 @@ def year_view(year):
     # monthly summary
     monthly = {}
     for r in rows:
-        m = int(r["date"][5:7])
+        m = int(r["date"].split("-")[1])
         if m not in monthly:
             monthly[m] = {"weights": [], "name": calendar.month_abbr[m]}
         if r["weight"] is not None:

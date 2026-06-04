@@ -56,7 +56,7 @@ def import_xml(xml_path):
 
             try:
                 weight = float(weight_str)
-                date_str = f"{year}-{month}-{int(day_num):02d}"
+                date_str = f"{year}-{int(month):02d}-{int(day_num):02d}"
             except ValueError:
                 continue
 
