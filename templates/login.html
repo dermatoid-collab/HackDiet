@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Hacker's Diet Online — Login</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<table class="title">
+<tr>
+  <td align="center" valign="top" style="padding:0.5rem 1rem;">
+    <span class="title1">The Hacker's Diet <em>Online</em></span><br>
+    <span class="title2">How to lose weight and hair through stress and poor nutrition</span>
+  </td>
+</tr>
+</table>
+
+<div id="main" style="max-width:340px; margin:40px auto; text-align:center;">
+  <h2 style="color:#000080; font-size:1.1rem; margin-bottom:16px;">Sign In</h2>
+  {% if error %}
+  <p style="color:#cc0000; font-size:0.9rem; margin-bottom:12px;">{{ error }}</p>
+  {% endif %}
+  <form method="POST" action="{{ url_for('login') }}">
+    <table style="margin:0 auto; border-collapse:collapse;">
+      <tr>
+        <td style="padding:6px 8px; text-align:right; font-size:0.9rem;">Password:</td>
+        <td style="padding:6px 8px;">
+          <input type="password" name="password" autofocus
+            style="font-size:0.9rem; padding:3px 6px; border:1px solid #999; width:180px;">
+        </td>
+      </tr>
+      <tr>
+        <td colspan="2" style="padding:10px 8px; text-align:center;">
+          <input type="submit" value=" Sign In "
+            style="background:#000080; color:#fff; border:1px solid #000060;
+                   padding:4px 18px; cursor:pointer; font-size:0.9rem;">
+        </td>
+      </tr>
+    </table>
+  </form>
+</div>
+
+</body>
+</html>

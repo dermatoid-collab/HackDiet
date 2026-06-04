@@ -1,14 +1,26 @@
-from flask import Flask, render_template, request, redirect, url_for, g
+from flask import Flask, render_template, request, redirect, url_for, g, session
+from functools import wraps
 import sqlite3
 import os
 from datetime import date, timedelta, datetime
 import calendar
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("SECRET_KEY", "change-me-in-production-please")
 DB_PATH = os.path.join(os.path.dirname(__file__), "hackdiet.db")
+PASSWORD = os.environ.get("HACKDIET_PASSWORD", "hackdiet")
 
 ALPHA = 0.1
-HEIGHT_M = 1.78  # metres, from account settings
+HEIGHT_M = 1.78
+
+
+def login_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not session.get("logged_in"):
+            return redirect(url_for("login"))
+        return f(*args, **kwargs)
+    return decorated
 
 
 def get_db():
@@ -105,13 +117,32 @@ def inject_globals():
     return {'current_year': date.today().year, 'active_tab': ''}
 
 
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    error = None
+    if request.method == "POST":
+        if request.form.get("password") == PASSWORD:
+            session["logged_in"] = True
+            return redirect(url_for("index"))
+        error = "Password errata."
+    return render_template("login.html", error=error)
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
+
+
 @app.route("/")
+@login_required
 def index():
     today = date.today()
     return redirect(url_for("month_view", year=today.year, month=today.month))
 
 
 @app.route("/month/<int:year>/<int:month>", methods=["GET"])
+@login_required
 def month_view(year, month):
     db = get_db()
     month_str = f"{year:04d}-{month:02d}"
@@ -199,6 +230,7 @@ def month_view(year, month):
 
 
 @app.route("/month/<int:year>/<int:month>/update", methods=["POST"])
+@login_required
 def month_update(year, month):
     db = get_db()
     days_in_month = calendar.monthrange(year, month)[1]
@@ -233,6 +265,7 @@ def month_update(year, month):
 
 
 @app.route("/year/<int:year>")
+@login_required
 def year_view(year):
     db = get_db()
     rows = db.execute(
@@ -284,6 +317,7 @@ def year_view(year):
 
 
 @app.route("/trend", methods=["GET", "POST"])
+@login_required
 def trend_view():
     db = get_db()
     today = date.today()
@@ -376,6 +410,7 @@ def trend_view():
 
 
 @app.route("/chart", methods=["GET", "POST"])
+@login_required
 def chart_view():
     db = get_db()
     today = date.today()
@@ -430,6 +465,7 @@ def chart_view():
 
 
 @app.route("/demo")
+@login_required
 def demo():
     import random
     db = get_db()
