@@ -44,22 +44,42 @@ def init_db():
     db.close()
 
 
-def linear_regression_kg_per_week(date_strs, trends):
-    """Compute kg/week via linear regression on (day_number, trend) pairs."""
-    n = len(trends)
-    if n < 2:
+CALORIES_PER_KG = 7716  # exact constant from HDiet source (monthlog.pm)
+
+
+def trendfit_slope_per_day(d_from, d_to, db):
+    """
+    Exact port of HDiet::trendfit / history::analyseTrend.
+    Iterates every calendar day in [d_from, d_to], carries forward last known
+    trend for days without entries, feeds sequential index into linear regression.
+    Returns slope in kg/day (multiply by 7 for kg/week).
+    """
+    # Build date→trend map for the full range
+    rows = db.execute(
+        "SELECT date, trend FROM entries WHERE date >= ? AND date <= ? AND trend IS NOT NULL ORDER BY date ASC",
+        (d_from.isoformat(), d_to.isoformat())
+    ).fetchall()
+    trend_map = {r["date"]: r["trend"] for r in rows}
+
+    n = s1 = s2 = s3 = s4 = 0
+    last_trend = None
+    cur = d_from
+    while cur <= d_to:
+        ds = cur.isoformat()
+        t = trend_map.get(ds, last_trend)  # carry forward
+        if t is not None:
+            n += 1
+            s1 += n * t
+            s2 += n
+            s3 += t
+            s4 += n * n
+            last_trend = t
+        cur += timedelta(days=1)
+
+    denom = s4 * n - s2 * s2
+    if denom == 0 or n < 2:
         return None
-    d0 = datetime.strptime(date_strs[0], "%Y-%m-%d").date()
-    xs = [(datetime.strptime(d, "%Y-%m-%d").date() - d0).days for d in date_strs]
-    ys = trends
-    sx = sum(xs); sy = sum(ys)
-    sxy = sum(x * y for x, y in zip(xs, ys))
-    sx2 = sum(x * x for x in xs)
-    denom = n * sx2 - sx * sx
-    if denom == 0:
-        return None
-    slope_per_day = (n * sxy - sx * sy) / denom  # kg/day
-    return slope_per_day * 7  # kg/week
+    return (s1 * n - s2 * s3) / denom  # kg/day
 
 
 def recalculate_trends():
@@ -142,7 +162,7 @@ def month_view(year, month):
     daily_calories = None
     if len(last_entries) >= 7:
         week_delta = round(last_entries[0]["trend"] - last_entries[6]["trend"], 2)
-        daily_calories = round(abs(week_delta) * 7700 / 7)
+        daily_calories = round(abs(week_delta) / 7 * CALORIES_PER_KG)
 
     # BMI from last weight
     last_weight_row = db.execute(
@@ -295,26 +315,22 @@ def trend_view():
     for label, n_days in intervals:
         d_from = today - timedelta(days=n_days - 1)
         d_to = today
-        rows = db.execute(
-            "SELECT date, trend FROM entries WHERE date >= ? AND date <= ? AND trend IS NOT NULL ORDER BY date ASC",
-            (d_from.isoformat(), d_to.isoformat())
-        ).fetchall()
-        if len(rows) >= 2:
-            date_strs = [r["date"] for r in rows]
+        slope = trendfit_slope_per_day(d_from, d_to, db)
+        if slope is not None:
+            kg_per_week = round(slope * 7, 2)
+            cal_per_day = int(slope * CALORIES_PER_KG)
+            rows = db.execute(
+                "SELECT trend FROM entries WHERE date >= ? AND date <= ? AND trend IS NOT NULL",
+                (d_from.isoformat(), d_to.isoformat())
+            ).fetchall()
             trends = [r["trend"] for r in rows]
-            kg_per_week = linear_regression_kg_per_week(date_strs, trends)
-            kg_per_week = round(kg_per_week, 2) if kg_per_week is not None else None
-            cal_per_day = int(kg_per_week * 7700 / 7) if kg_per_week is not None else None
-            t_min = round(min(trends), 1)
-            t_mean = round(sum(trends) / len(trends), 1)
-            t_max = round(max(trends), 1)
             stats.append({
                 "label": label,
                 "kg_per_week": kg_per_week,
                 "cal_per_day": cal_per_day,
-                "t_min": t_min,
-                "t_mean": t_mean,
-                "t_max": t_max,
+                "t_min": round(min(trends), 1),
+                "t_mean": round(sum(trends) / len(trends), 1),
+                "t_max": round(max(trends), 1),
             })
         else:
             stats.append({
@@ -329,16 +345,15 @@ def trend_view():
     # Custom range stats
     custom_stats = None
     if custom_from and custom_to:
-        rows = db.execute(
-            "SELECT date, trend FROM entries WHERE date >= ? AND date <= ? AND trend IS NOT NULL ORDER BY date ASC",
-            (custom_from.isoformat(), custom_to.isoformat())
-        ).fetchall()
-        if len(rows) >= 2:
-            date_strs = [r["date"] for r in rows]
+        slope = trendfit_slope_per_day(custom_from, custom_to, db)
+        if slope is not None:
+            kg_per_week = round(slope * 7, 2)
+            cal_per_day = int(slope * CALORIES_PER_KG)
+            rows = db.execute(
+                "SELECT trend FROM entries WHERE date >= ? AND date <= ? AND trend IS NOT NULL",
+                (custom_from.isoformat(), custom_to.isoformat())
+            ).fetchall()
             trends = [r["trend"] for r in rows]
-            kg_per_week = linear_regression_kg_per_week(date_strs, trends)
-            kg_per_week = round(kg_per_week, 2) if kg_per_week is not None else None
-            cal_per_day = int(kg_per_week * 7700 / 7) if kg_per_week is not None else None
             custom_stats = {
                 "kg_per_week": kg_per_week,
                 "cal_per_day": cal_per_day,
