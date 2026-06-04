@@ -1,6 +1,6 @@
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  font-size: 36px;
+  font-size: 20px;
   background: #ffffff;
   color: #000000;
   margin: 0;
@@ -11,16 +11,16 @@ body {
 table.title {
   width: 100%;
   background: #ffffff;
-  border-bottom: 3px solid #000080;
+  border-bottom: 2px solid #000080;
   margin-bottom: 0;
 }
 .title1 {
-  font-size: 1.3rem;
+  font-size: 1.4rem;
   font-weight: bold;
   color: #000080;
 }
 .title2 {
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   color: #555;
   font-style: italic;
 }
@@ -32,7 +32,7 @@ nav.navbar {
   display: flex;
   justify-content: center;
   align-items: stretch;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   position: relative;
 }
 .navbar-tabs {
@@ -49,9 +49,9 @@ nav.navbar {
 }
 a.navbar-tab {
   display: block;
-  padding: 8px 18px;
+  padding: 6px 16px;
   color: #ffffff;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   font-weight: 500;
   white-space: nowrap;
   text-decoration: none;
@@ -63,26 +63,26 @@ a.navbar-tab.active {
   background: #ffffff;
   color: #000080;
   font-weight: 700;
-  border-top: 3px solid #000080;
-  padding-top: 5px;
+  border-top: 2px solid #000080;
+  padding-top: 4px;
 }
 
 /* Main content */
 #main {
-  padding: 0 14px 14px;
+  padding: 0 12px 12px;
 }
 
 /* Month heading with nav arrows */
 h1.monthyear {
   text-align: center;
-  font-size: 1.2rem;
+  font-size: 1.3rem;
   color: #000080;
-  margin: 10px 0;
+  margin: 8px 0;
 }
 a.navarrow {
   color: #000080;
   text-decoration: none;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   vertical-align: middle;
 }
 a.navarrow:hover { color: #cc0000; }
@@ -90,7 +90,7 @@ a.navarrow:hover { color: #cc0000; }
 /* Chart */
 .chart-wrap {
   text-align: center;
-  margin: 10px 0;
+  margin: 8px 0;
 }
 .chart-wrap canvas {
   display: block;
@@ -99,8 +99,8 @@ a.navarrow:hover { color: #cc0000; }
 
 /* Trend stats */
 p.trendan {
-  font-size: 0.85rem;
-  margin: 8px 12px;
+  font-size: 0.9rem;
+  margin: 6px 12px;
   color: #333;
   text-align: center;
 }
@@ -108,13 +108,13 @@ p.trendan {
 /* Monthly log table */
 table.mlog {
   border-collapse: collapse;
-  font-size: 0.8rem;
-  margin: 10px auto;
+  font-size: 0.85rem;
+  margin: 8px auto;
   width: auto;
 }
 table.mlog th, table.mlog td {
   border: 1px solid #aaa;
-  padding: 5px 10px;
+  padding: 2px 6px;
   white-space: nowrap;
 }
 table.mlog thead th {
@@ -122,19 +122,19 @@ table.mlog thead th {
   color: #ffffff;
   text-align: center;
   font-weight: normal;
-  padding: 6px 12px;
+  padding: 3px 8px;
 }
 table.mlog tbody th.daynum {
   background: #e0e0e0;
   text-align: right;
   font-weight: bold;
-  width: 30px;
+  width: 24px;
   color: #000;
 }
 table.mlog tbody td.dow {
   background: #f0f0f0;
   color: #444;
-  width: 40px;
+  width: 32px;
   text-align: center;
 }
 tr.today td, tr.today th {
@@ -143,10 +143,10 @@ tr.today td, tr.today th {
 
 /* Weight input */
 input.winput {
-  width: 64px;
-  font-size: 0.8rem;
+  width: 52px;
+  font-size: 0.85rem;
   border: 1px solid #999;
-  padding: 3px 5px;
+  padding: 1px 3px;
   font-family: 'Inter', system-ui, sans-serif;
   text-align: right;
 }
@@ -160,7 +160,7 @@ input.winput:focus {
 td.tcell {
   font-family: 'Inter', system-ui, sans-serif;
   text-align: right;
-  min-width: 50px;
+  min-width: 40px;
   color: #cc0000;
 }
 
@@ -168,61 +168,61 @@ td.tcell {
 td.vcell {
   font-family: 'Inter', system-ui, sans-serif;
   text-align: right;
-  min-width: 54px;
+  min-width: 44px;
 }
-span.g { color: #007700; }
-span.r { color: #cc0000; }
+span.g { color: #007700; }   /* negative var = below trend = good */
+span.r { color: #cc0000; }   /* positive var = above trend = bad  */
 span.bk { color: #000000; }
 
 /* Comment input */
 td.ccell input {
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   border: 1px solid #ccc;
-  padding: 3px 5px;
+  padding: 1px 3px;
   width: 380px;
 }
 
 /* Update/Reset buttons */
 p.mlog_buttons {
-  margin: 10px 12px;
+  margin: 8px 12px;
   text-align: center;
 }
 p.mlog_buttons input[type=submit] {
   background: #000080;
   color: #fff;
   border: 1px solid #000060;
-  padding: 6px 20px;
+  padding: 3px 14px;
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
 }
 p.mlog_buttons input[type=submit]:hover { background: #0000aa; }
 p.mlog_buttons input[type=reset] {
   background: #e0e0e0;
   color: #000;
   border: 1px solid #999;
-  padding: 6px 20px;
+  padding: 3px 14px;
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
 }
 
 /* Year view */
 h1.yeartitle {
   text-align: center;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   color: #000080;
-  margin: 10px 0;
+  margin: 8px 0;
 }
-.chart-year { text-align: center; margin: 10px 0; }
+.chart-year { text-align: center; margin: 8px 0; }
 .chart-year canvas { display: block; margin: 0 auto; }
 
 table.year-summary {
   border-collapse: collapse;
-  font-size: 0.8rem;
-  margin: 10px auto;
+  font-size: 0.85rem;
+  margin: 8px auto;
 }
 table.year-summary th, table.year-summary td {
   border: 1px solid #aaa;
-  padding: 5px 14px;
+  padding: 3px 10px;
   text-align: right;
 }
 table.year-summary thead th {
@@ -238,29 +238,29 @@ a.monthlink:hover { text-decoration: underline; }
 /* Footer */
 p.footer {
   text-align: center;
-  font-size: 0.7rem;
+  font-size: 0.78rem;
   color: #888;
   border-top: 1px solid #ccc;
   padding-top: 6px;
-  margin-top: 14px;
+  margin-top: 12px;
 }
 p.footer a { color: #666; }
 
-h1.c { text-align: center; color: #000080; font-size: 1.2rem; margin: 10px 0; }
+h1.c { text-align: center; color: #000080; font-size: 1.3rem; margin: 8px 0; }
 a.btn-download {
   display: inline-block;
   background: #000080;
   color: #fff;
   text-decoration: none;
-  padding: 10px 24px;
-  font-size: 0.85rem;
+  padding: 8px 20px;
+  font-size: 0.95rem;
   font-weight: 500;
   border: 1px solid #000060;
   cursor: pointer;
 }
 a.btn-download:hover { background: #0000aa; }
-table.trendan { border-collapse: collapse; margin: 10px auto; font-size: 0.8rem; }
-table.trendan th, table.trendan td { border: 1px solid #aaa; padding: 6px 14px; }
+table.trendan { border-collapse: collapse; margin: 8px auto; font-size: 0.85rem; }
+table.trendan th, table.trendan td { border: 1px solid #aaa; padding: 3px 10px; }
 table.trendan thead th { background: #000080; color: #fff; font-weight: normal; }
 table.trendan th.custitle { background: #000080; color: #fff; text-align: center; }
 td.w, td.wb, td.e { text-align: right; font-family: 'Inter', system-ui, sans-serif; }
