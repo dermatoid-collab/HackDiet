@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}{{ year }} Annual View — The Hacker's Diet{% endblock %}
+
+{% block nav %}
+<a href="{{ url_for('year_view', year=prev_year) }}">&laquo; {{ prev_year }}</a>
+<strong>Year {{ year }}</strong>
+<a href="{{ url_for('year_view', year=next_year) }}">{{ next_year }} &raquo;</a>
+&nbsp;|&nbsp;
+<a href="{{ url_for('index') }}">This month</a>
+{% endblock %}
+
+{% block content %}
+{% if chart_labels %}
+<section class="chart-container chart-year">
+  <canvas id="yearChart"></canvas>
+</section>
+{% else %}
+<p class="muted">No data for {{ year }}.</p>
+{% endif %}
+
+<section class="log-table">
+  <h2>Monthly Summary</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Month</th>
+        <th>Days logged</th>
+        <th>Min (kg)</th>
+        <th>Avg (kg)</th>
+        <th>Max (kg)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in month_summaries %}
+      <tr class="{{ 'has-data' if s.count > 0 else '' }}">
+        <td>{{ s.name }}</td>
+        <td class="num">{{ s.count if s.count > 0 else "—" }}</td>
+        <td class="num">{{ "%.1f"|format(s.min) if s.min is not none else "—" }}</td>
+        <td class="num">{{ "%.1f"|format(s.avg) if s.avg is not none else "—" }}</td>
+        <td class="num">{{ "%.1f"|format(s.max) if s.max is not none else "—" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+{% if chart_labels %}
+<script>
+const labels = {{ chart_labels | tojson }};
+const weightData = {{ chart_weight | tojson }};
+const trendData = {{ chart_trend | tojson }};
+
+new Chart(document.getElementById('yearChart'), {
+  type: 'line',
+  data: {
+    labels: labels,
+    datasets: [
+      {
+        label: 'Weight',
+        data: weightData,
+        borderColor: '#3a7bd5',
+        backgroundColor: 'rgba(58,123,213,0.08)',
+        pointRadius: 2,
+        tension: 0.1,
+        spanGaps: false,
+      },
+      {
+        label: 'Trend',
+        data: trendData,
+        borderColor: '#e03030',
+        backgroundColor: 'transparent',
+        pointRadius: 0,
+        tension: 0.3,
+        spanGaps: true,
+        borderWidth: 2,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { position: 'top' },
+      tooltip: {
+        callbacks: {
+          label: ctx => ctx.dataset.label + ': ' + (ctx.raw != null ? ctx.raw.toFixed(1) + ' kg' : '—')
+        }
+      }
+    },
+    scales: {
+      x: { ticks: { maxTicksLimit: 12 }, title: { display: true, text: 'Date' } },
+      y: { title: { display: true, text: 'kg' } }
+    }
+  }
+});
+</script>
+{% endif %}
+{% endblock %}
