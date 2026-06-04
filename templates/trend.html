@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}The Hacker's Diet Online: Trend Analysis{% endblock %}
+
+{% block content %}
+<h1 class="c">Trend Analysis</h1>
+
+<table class="trendan">
+<thead>
+  <tr>
+    <th>Last&hellip;</th>
+    <th>Gain/Loss kg/week</th>
+    <th>Excess/Deficit cal/day</th>
+    <th colspan="3">Weight Trend (Min / Mean / Max)</th>
+  </tr>
+</thead>
+<tbody>
+{% for s in stats %}
+<tr>
+  <td>{{ s.label }}</td>
+  <td class="w">
+    {% if s.kg_per_week is not none %}
+      {% if s.kg_per_week > 0 %}+{% endif %}{{ "%.2f"|format(s.kg_per_week) }}
+    {% else %}&mdash;{% endif %}
+  </td>
+  <td class="e">
+    {% if s.cal_per_day is not none %}{{ s.cal_per_day }}{% else %}&mdash;{% endif %}
+  </td>
+  <td class="w">{% if s.t_min is not none %}{{ "%.1f"|format(s.t_min) }}{% else %}&mdash;{% endif %}</td>
+  <td class="w">{% if s.t_mean is not none %}{{ "%.1f"|format(s.t_mean) }}{% else %}&mdash;{% endif %}</td>
+  <td class="w">{% if s.t_max is not none %}{{ "%.1f"|format(s.t_max) }}{% else %}&mdash;{% endif %}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+<form method="post" action="{{ url_for('trend_view') }}">
+<table class="trendan">
+  <thead>
+    <tr><th class="custitle" colspan="6">Custom Date Range</th></tr>
+  </thead>
+  <tbody>
+    {% if custom_stats %}
+    <tr>
+      <td>Custom</td>
+      <td class="w">
+        {% if custom_stats.kg_per_week > 0 %}+{% endif %}{{ "%.2f"|format(custom_stats.kg_per_week) }}
+      </td>
+      <td class="e">{{ custom_stats.cal_per_day }}</td>
+      <td class="w">{{ "%.1f"|format(custom_stats.t_min) }}</td>
+      <td class="w">{{ "%.1f"|format(custom_stats.t_mean) }}</td>
+      <td class="w">{{ "%.1f"|format(custom_stats.t_max) }}</td>
+    </tr>
+    {% endif %}
+    <tr>
+      <td colspan="6">
+        <p class="centred">
+          From:
+          <select name="from_y">
+            {% for y in years %}<option value="{{ y }}"{% if custom_from and custom_from.year==y %} selected{% endif %}>{{ y }}</option>{% endfor %}
+          </select>
+          <select name="from_m">
+            {% for m in range(1,13) %}<option value="{{ m }}"{% if custom_from and custom_from.month==m %} selected{% endif %}>{{ "%02d"|format(m) }}</option>{% endfor %}
+          </select>
+          <select name="from_d">
+            {% for d in range(1,32) %}<option value="{{ d }}"{% if custom_from and custom_from.day==d %} selected{% endif %}>{{ "%02d"|format(d) }}</option>{% endfor %}
+          </select>
+          &nbsp;To:
+          <select name="to_y">
+            {% for y in years %}<option value="{{ y }}"{% if custom_to and custom_to.year==y %} selected{% elif not custom_to and y==today.year %} selected{% endif %}>{{ y }}</option>{% endfor %}
+          </select>
+          <select name="to_m">
+            {% for m in range(1,13) %}<option value="{{ m }}"{% if custom_to and custom_to.month==m %} selected{% elif not custom_to and m==today.month %} selected{% endif %}>{{ "%02d"|format(m) }}</option>{% endfor %}
+          </select>
+          <select name="to_d">
+            {% for d in range(1,32) %}<option value="{{ d }}"{% if custom_to and custom_to.day==d %} selected{% elif not custom_to and d==today.day %} selected{% endif %}>{{ "%02d"|format(d) }}</option>{% endfor %}
+          </select>
+          &nbsp;
+          <input type="submit" value=" Update ">
+          &nbsp;
+          <input type="button" value=" Reset " onclick="window.location='{{ url_for('trend_view') }}'">
+        </p>
+      </td>
+    </tr>
+  </tbody>
+</table>
+</form>
+{% endblock %}

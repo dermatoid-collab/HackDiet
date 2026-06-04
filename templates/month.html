@@ -2,16 +2,6 @@
 
 {% block title %}The Hacker's Diet Online: Monthly log for {{ month_name }} {{ year }}{% endblock %}
 
-{% block nav %}
-<table class="navbar">
-  <tr>
-    <td class="active" title="Display the current monthly log">Log</td>
-    <td><a class="navbar" href="{{ url_for('year_view', year=year) }}" title="Show yearly chart">History</a></td>
-    <td class="pad"></td>
-  </tr>
-</table>
-{% endblock %}
-
 {% block content %}
 <form id="monthlog" method="post" action="{{ url_for('month_update', year=year, month=month) }}">
 

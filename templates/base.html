@@ -18,7 +18,23 @@
 </tr>
 </table>
 
-{% block nav %}{% endblock %}
+<table class="navbar">
+  <tr>
+    <td {% if active_tab=='log' %}class="active"{% endif %} title="Display the current monthly log">
+      {% if active_tab=='log' %}Log{% else %}<a class="navbar" href="{{ url_for('index') }}">Log</a>{% endif %}
+    </td>
+    <td {% if active_tab=='history' %}class="active"{% endif %} title="Show yearly history">
+      {% if active_tab=='history' %}History{% else %}<a class="navbar" href="{{ url_for('year_view', year=current_year) }}">History</a>{% endif %}
+    </td>
+    <td {% if active_tab=='chart' %}class="active"{% endif %} title="Generate historical charts">
+      {% if active_tab=='chart' %}Chart{% else %}<a class="navbar" href="{{ url_for('chart_view') }}">Chart</a>{% endif %}
+    </td>
+    <td {% if active_tab=='trend' %}class="active"{% endif %} title="Analyse weight trend">
+      {% if active_tab=='trend' %}Trend{% else %}<a class="navbar" href="{{ url_for('trend_view') }}">Trend</a>{% endif %}
+    </td>
+    <td class="pad"></td>
+  </tr>
+</table>
 
 <div id="main">
   {% block content %}{% endblock %}

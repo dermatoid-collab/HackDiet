@@ -62,6 +62,11 @@ def parse_weight(s):
     return float(s)
 
 
+@app.context_processor
+def inject_globals():
+    return {'current_year': date.today().year, 'active_tab': ''}
+
+
 @app.route("/")
 def index():
     today = date.today()
@@ -137,6 +142,7 @@ def month_view(year, month):
     next_month_d = date(year, month, days_in_month) + timedelta(days=1)
 
     return render_template("month.html",
+        active_tab='log',
         year=year, month=month,
         month_name=calendar.month_name[month],
         day_rows=day_rows,
@@ -228,6 +234,7 @@ def year_view(year):
             })
 
     return render_template("year.html",
+        active_tab='history',
         year=year,
         chart_labels=chart_labels,
         chart_weight=chart_weight,
@@ -235,6 +242,154 @@ def year_view(year):
         month_summaries=month_summaries,
         prev_year=year - 1,
         next_year=year + 1,
+    )
+
+
+@app.route("/trend", methods=["GET", "POST"])
+def trend_view():
+    db = get_db()
+    today = date.today()
+
+    # Get first year in DB
+    first_row = db.execute("SELECT MIN(date) as d FROM entries").fetchone()
+    first_year = int(first_row["d"][:4]) if first_row["d"] else today.year
+
+    # Custom date range from POST
+    custom_from = None
+    custom_to = None
+    if request.method == "POST":
+        try:
+            custom_from = date(int(request.form["from_y"]), int(request.form["from_m"]), int(request.form["from_d"]))
+            custom_to = date(int(request.form["to_y"]), int(request.form["to_m"]), int(request.form["to_d"]))
+        except (KeyError, ValueError):
+            pass
+
+    intervals = [
+        ("Week", 7),
+        ("Fortnight", 14),
+        ("Month", 30),
+        ("Quarter", 91),
+        ("Six months", 182),
+        ("Year", 365),
+    ]
+
+    stats = []
+    for label, n_days in intervals:
+        d_from = today - timedelta(days=n_days - 1)
+        d_to = today
+        rows = db.execute(
+            "SELECT trend FROM entries WHERE date >= ? AND date <= ? AND trend IS NOT NULL ORDER BY date ASC",
+            (d_from.isoformat(), d_to.isoformat())
+        ).fetchall()
+        if len(rows) >= 2:
+            trends = [r["trend"] for r in rows]
+            kg_per_week = round((trends[-1] - trends[0]) / (n_days / 7), 2)
+            cal_per_day = int(abs(kg_per_week) * 7700 / 7)
+            t_min = round(min(trends), 1)
+            t_mean = round(sum(trends) / len(trends), 1)
+            t_max = round(max(trends), 1)
+            stats.append({
+                "label": label,
+                "kg_per_week": kg_per_week,
+                "cal_per_day": cal_per_day,
+                "t_min": t_min,
+                "t_mean": t_mean,
+                "t_max": t_max,
+            })
+        else:
+            stats.append({
+                "label": label,
+                "kg_per_week": None,
+                "cal_per_day": None,
+                "t_min": None,
+                "t_mean": None,
+                "t_max": None,
+            })
+
+    # Custom range stats
+    custom_stats = None
+    if custom_from and custom_to:
+        rows = db.execute(
+            "SELECT trend FROM entries WHERE date >= ? AND date <= ? AND trend IS NOT NULL ORDER BY date ASC",
+            (custom_from.isoformat(), custom_to.isoformat())
+        ).fetchall()
+        n_days = (custom_to - custom_from).days + 1
+        if len(rows) >= 2 and n_days > 0:
+            trends = [r["trend"] for r in rows]
+            kg_per_week = round((trends[-1] - trends[0]) / (n_days / 7), 2)
+            cal_per_day = int(abs(kg_per_week) * 7700 / 7)
+            custom_stats = {
+                "kg_per_week": kg_per_week,
+                "cal_per_day": cal_per_day,
+                "t_min": round(min(trends), 1),
+                "t_mean": round(sum(trends) / len(trends), 1),
+                "t_max": round(max(trends), 1),
+            }
+
+    years = list(range(first_year, today.year + 1))
+
+    return render_template("trend.html",
+        active_tab='trend',
+        stats=stats,
+        custom_stats=custom_stats,
+        custom_from=custom_from,
+        custom_to=custom_to,
+        years=years,
+        today=today,
+    )
+
+
+@app.route("/chart", methods=["GET", "POST"])
+def chart_view():
+    db = get_db()
+    today = date.today()
+
+    first_row = db.execute("SELECT MIN(date) as d FROM entries").fetchone()
+    first_year = int(first_row["d"][:4]) if first_row["d"] else today.year
+    years = list(range(first_year, today.year + 1))
+
+    period = request.form.get("period") or request.args.get("period", "q")
+
+    custom_from = None
+    custom_to = None
+    if period == "c":
+        try:
+            custom_from = date(int(request.form["from_y"]), int(request.form["from_m"]), int(request.form["from_d"]))
+            custom_to = date(int(request.form["to_y"]), int(request.form["to_m"]), int(request.form["to_d"]))
+        except (KeyError, ValueError):
+            period = "q"
+
+    period_days = {"m": 30, "q": 91, "h": 182, "y": 365}
+    if period in period_days:
+        d_from = today - timedelta(days=period_days[period] - 1)
+        d_to = today
+    elif period == "c" and custom_from and custom_to:
+        d_from = custom_from
+        d_to = custom_to
+    else:
+        period = "q"
+        d_from = today - timedelta(days=90)
+        d_to = today
+
+    rows = db.execute(
+        "SELECT date, weight, trend FROM entries WHERE date >= ? AND date <= ? ORDER BY date ASC",
+        (d_from.isoformat(), d_to.isoformat())
+    ).fetchall()
+
+    chart_labels = [r["date"] for r in rows]
+    chart_weight = [r["weight"] for r in rows]
+    chart_trend = [round(r["trend"], 1) if r["trend"] else None for r in rows]
+
+    return render_template("chart.html",
+        active_tab='chart',
+        period=period,
+        chart_labels=chart_labels,
+        chart_weight=chart_weight,
+        chart_trend=chart_trend,
+        custom_from=custom_from,
+        custom_to=custom_to,
+        years=years,
+        today=today,
     )
 
 

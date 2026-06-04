@@ -2,16 +2,6 @@
 
 {% block title %}The Hacker's Diet Online: {{ year }} Annual Chart{% endblock %}
 
-{% block nav %}
-<table class="navbar">
-  <tr>
-    <td><a class="navbar" href="{{ url_for('index') }}" title="Go to current month log">Log</a></td>
-    <td class="active" title="Yearly history">History</td>
-    <td class="pad"></td>
-  </tr>
-</table>
-{% endblock %}
-
 {% block content %}
 <h1 class="yeartitle">
   <a class="navarrow" href="{{ url_for('year_view', year=prev_year) }}">&#9664;</a>
