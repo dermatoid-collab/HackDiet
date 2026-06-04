@@ -90,6 +90,7 @@ p.trendan {
   font-size: 0.9rem;
   margin: 6px 12px;
   color: #333;
+  text-align: center;
 }
 
 /* Monthly log table */
@@ -172,6 +173,7 @@ td.ccell input {
 /* Update/Reset buttons */
 p.mlog_buttons {
   margin: 8px 12px;
+  text-align: center;
 }
 p.mlog_buttons input[type=submit] {
   background: #000080;
@@ -199,6 +201,7 @@ h1.yeartitle {
   margin: 8px 0;
 }
 .chart-year { text-align: center; margin: 8px 0; }
+.chart-year canvas { display: block; margin: 0 auto; }
 
 table.year-summary {
   border-collapse: collapse;
