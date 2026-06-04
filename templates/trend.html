@@ -5,7 +5,6 @@
 {% block content %}
 <h1 class="c">Trend Analysis</h1>
 
-<div class="trendan-scroll">
 <table class="trendan">
 <thead>
   <tr>
@@ -40,10 +39,8 @@
 {% endfor %}
 </tbody>
 </table>
-</div>
 
 <form method="post" action="{{ url_for('trend_view') }}">
-<div class="trendan-scroll">
 <table class="trendan">
   <thead>
     <tr><th class="custitle" colspan="6">Custom Date Range</th></tr>
@@ -99,6 +96,5 @@
     </tr>
   </tbody>
 </table>
-</div>
 </form>
 {% endblock %}
