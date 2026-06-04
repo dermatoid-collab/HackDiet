@@ -18,7 +18,7 @@
 {% for s in stats %}
 <tr>
   <td>{{ s.label }}</td>
-  <td class="w">
+  <td class="wb">
     {% if s.kg_per_week is not none %}
       <span class="{{ 'g' if s.kg_per_week < 0 else 'r' }}">
         {% if s.kg_per_week > 0 %}+{% endif %}{{ "%.2f"|format(s.kg_per_week) }}
@@ -49,7 +49,7 @@
     {% if custom_stats %}
     <tr>
       <td>Custom</td>
-      <td class="w">
+      <td class="wb">
         <span class="{{ 'g' if custom_stats.kg_per_week < 0 else 'r' }}">
           {% if custom_stats.kg_per_week > 0 %}+{% endif %}{{ "%.2f"|format(custom_stats.kg_per_week) }}
         </span>

@@ -263,6 +263,7 @@ table.trendan { border-collapse: collapse; margin: 8px auto; font-size: 0.85rem;
 table.trendan th, table.trendan td { border: 1px solid #aaa; padding: 3px 10px; }
 table.trendan thead th { background: #000080; color: #fff; font-weight: normal; }
 table.trendan th.custitle { background: #000080; color: #fff; text-align: center; }
-td.w, td.e { text-align: right; font-family: 'Inter', system-ui, sans-serif; font-weight: 700; }
+td.w, td.wb, td.e { text-align: right; font-family: 'Inter', system-ui, sans-serif; }
+td.wb, td.e { font-weight: 700; }
 p.centred { text-align: center; }
 .chart-workshop-canvas { display: block; margin: 0 auto; }
