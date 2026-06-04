@@ -1,6 +1,6 @@
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  font-size: 18px;
+  font-size: 20px;
   background: #ffffff;
   color: #000000;
   margin: 0;
@@ -38,7 +38,6 @@ nav.navbar {
 .navbar-tabs {
   display: flex;
   justify-content: center;
-  flex-wrap: wrap;
 }
 .navbar-right {
   position: absolute;
@@ -50,7 +49,7 @@ nav.navbar {
 }
 a.navbar-tab {
   display: block;
-  padding: 7px 14px;
+  padding: 6px 16px;
   color: #ffffff;
   font-size: 0.9rem;
   font-weight: 500;
@@ -65,12 +64,12 @@ a.navbar-tab.active {
   color: #000080;
   font-weight: 700;
   border-top: 2px solid #000080;
-  padding-top: 5px;
+  padding-top: 4px;
 }
 
 /* Main content */
 #main {
-  padding: 0 10px 12px;
+  padding: 0 12px 12px;
 }
 
 /* Month heading with nav arrows */
@@ -92,18 +91,16 @@ a.navarrow:hover { color: #cc0000; }
 .chart-wrap {
   text-align: center;
   margin: 8px 0;
-  width: 100%;
 }
 .chart-wrap canvas {
   display: block;
   margin: 0 auto;
-  max-width: 100%;
 }
 
 /* Trend stats */
 p.trendan {
   font-size: 0.9rem;
-  margin: 6px 8px;
+  margin: 6px 12px;
   color: #333;
   text-align: center;
 }
@@ -114,11 +111,10 @@ table.mlog {
   font-size: 0.85rem;
   margin: 8px auto;
   width: auto;
-  max-width: 100%;
 }
 table.mlog th, table.mlog td {
   border: 1px solid #aaa;
-  padding: 3px 6px;
+  padding: 2px 6px;
   white-space: nowrap;
 }
 table.mlog thead th {
@@ -126,7 +122,7 @@ table.mlog thead th {
   color: #ffffff;
   text-align: center;
   font-weight: normal;
-  padding: 4px 8px;
+  padding: 3px 8px;
 }
 table.mlog tbody th.daynum {
   background: #e0e0e0;
@@ -138,7 +134,7 @@ table.mlog tbody th.daynum {
 table.mlog tbody td.dow {
   background: #f0f0f0;
   color: #444;
-  width: 36px;
+  width: 32px;
   text-align: center;
 }
 tr.today td, tr.today th {
@@ -147,10 +143,10 @@ tr.today td, tr.today th {
 
 /* Weight input */
 input.winput {
-  width: 54px;
+  width: 52px;
   font-size: 0.85rem;
   border: 1px solid #999;
-  padding: 2px 3px;
+  padding: 1px 3px;
   font-family: 'Inter', system-ui, sans-serif;
   text-align: right;
 }
@@ -164,7 +160,7 @@ input.winput:focus {
 td.tcell {
   font-family: 'Inter', system-ui, sans-serif;
   text-align: right;
-  min-width: 42px;
+  min-width: 40px;
   color: #cc0000;
 }
 
@@ -172,23 +168,18 @@ td.tcell {
 td.vcell {
   font-family: 'Inter', system-ui, sans-serif;
   text-align: right;
-  min-width: 46px;
+  min-width: 44px;
 }
-span.g { color: #007700; }
-span.r { color: #cc0000; }
+span.g { color: #007700; }   /* negative var = below trend = good */
+span.r { color: #cc0000; }   /* positive var = above trend = bad  */
 span.bk { color: #000000; }
 
-/* Comment input — narrow, fills remaining space */
-td.ccell {
-  width: 100%;
-}
+/* Comment input */
 td.ccell input {
   font-size: 0.82rem;
   border: 1px solid #ccc;
-  padding: 2px 3px;
-  width: 100%;
-  min-width: 60px;
-  box-sizing: border-box;
+  padding: 1px 3px;
+  width: 380px;
 }
 
 /* Update/Reset buttons */
@@ -200,7 +191,7 @@ p.mlog_buttons input[type=submit] {
   background: #000080;
   color: #fff;
   border: 1px solid #000060;
-  padding: 5px 18px;
+  padding: 3px 14px;
   cursor: pointer;
   font-size: 0.9rem;
 }
@@ -209,7 +200,7 @@ p.mlog_buttons input[type=reset] {
   background: #e0e0e0;
   color: #000;
   border: 1px solid #999;
-  padding: 5px 18px;
+  padding: 3px 14px;
   cursor: pointer;
   font-size: 0.9rem;
 }
@@ -221,8 +212,8 @@ h1.yeartitle {
   color: #000080;
   margin: 8px 0;
 }
-.chart-year { text-align: center; margin: 8px 0; width: 100%; }
-.chart-year canvas { display: block; margin: 0 auto; max-width: 100%; }
+.chart-year { text-align: center; margin: 8px 0; }
+.chart-year canvas { display: block; margin: 0 auto; }
 
 table.year-summary {
   border-collapse: collapse;
@@ -231,7 +222,7 @@ table.year-summary {
 }
 table.year-summary th, table.year-summary td {
   border: 1px solid #aaa;
-  padding: 4px 10px;
+  padding: 3px 10px;
   text-align: right;
 }
 table.year-summary thead th {
@@ -269,10 +260,10 @@ a.btn-download {
 }
 a.btn-download:hover { background: #0000aa; }
 table.trendan { border-collapse: collapse; margin: 8px auto; font-size: 0.85rem; }
-table.trendan th, table.trendan td { border: 1px solid #aaa; padding: 4px 12px; }
+table.trendan th, table.trendan td { border: 1px solid #aaa; padding: 3px 10px; }
 table.trendan thead th { background: #000080; color: #fff; font-weight: normal; }
 table.trendan th.custitle { background: #000080; color: #fff; text-align: center; }
 td.w, td.wb, td.e { text-align: right; font-family: 'Inter', system-ui, sans-serif; }
 td.wb, td.e { font-weight: 700; }
 p.centred { text-align: center; }
-.chart-workshop-canvas { display: block; margin: 0 auto; max-width: 100%; }
+.chart-workshop-canvas { display: block; margin: 0 auto; }

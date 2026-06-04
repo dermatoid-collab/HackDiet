@@ -13,7 +13,7 @@
 
 {% if chart_labels %}
 <div class="chart-wrap">
-  <canvas id="monthChart"></canvas>
+  <canvas id="monthChart" width="640" height="300"></canvas>
 </div>
 {% endif %}
 
@@ -107,9 +107,7 @@ new Chart(document.getElementById('monthChart'), {
     ]
   },
   options: {
-    responsive: true,
-    maintainAspectRatio: true,
-    aspectRatio: 2.2,
+    responsive: false,
     interaction: { mode: 'index', intersect: false },
     plugins: {
       legend: { position: 'top' },
