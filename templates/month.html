@@ -1,106 +1,113 @@
 {% extends "base.html" %}
 
-{% block title %}{{ month_name }} {{ year }} — The Hacker's Diet{% endblock %}
+{% block title %}The Hacker's Diet Online: Monthly log for {{ month_name }} {{ year }}{% endblock %}
 
 {% block nav %}
-<a href="{{ url_for('month_view', year=prev_year, month=prev_month) }}">&laquo; Prev</a>
-<strong>{{ month_name }} {{ year }}</strong>
-<a href="{{ url_for('month_view', year=next_year, month=next_month) }}">Next &raquo;</a>
-&nbsp;|&nbsp;
-<a href="{{ url_for('year_view', year=year) }}">Year {{ year }}</a>
+<table class="navbar">
+  <tr>
+    <td class="active" title="Display the current monthly log">Log</td>
+    <td><a class="navbar" href="{{ url_for('year_view', year=year) }}" title="Show yearly chart">History</a></td>
+    <td class="pad"></td>
+  </tr>
+</table>
 {% endblock %}
 
 {% block content %}
-<section class="summary">
-  {% if latest_trend %}
-  <span>Current trend: <strong>{{ "%.2f"|format(latest_trend) }} kg</strong></span>
-  {% if week_delta is not none %}
-  &nbsp;&nbsp;
-  <span>Weekly change: <strong class="{{ 'pos' if week_delta > 0 else 'neg' if week_delta < 0 else '' }}">
-    {{ "%+.2f"|format(week_delta) }} kg
-  </strong></span>
-  {% endif %}
-  {% else %}
-  <span class="muted">No data yet. Log your first weight below.</span>
-  {% endif %}
-</section>
+<form id="monthlog" method="post" action="{{ url_for('month_update', year=year, month=month) }}">
 
-<section class="log-form">
-  <form method="POST" action="/entry">
-    <label>Date <input type="date" name="date" value="{{ today }}" required></label>
-    <label>Weight (kg) <input type="text" name="weight" placeholder="e.g. 73.5" required autocomplete="off"></label>
-    <button type="submit">Log Weight</button>
-  </form>
-</section>
+<h1 class="monthyear">
+  <a class="navarrow" href="{{ url_for('month_view', year=prev_year, month=prev_month) }}">&#9664;</a>
+  &nbsp; <span>{{ month_name }} {{ year }}</span> &nbsp;
+  <a class="navarrow" href="{{ url_for('month_view', year=next_year, month=next_month) }}">&#9654;</a>
+</h1>
 
 {% if chart_labels %}
-<section class="chart-container">
-  <canvas id="monthChart"></canvas>
-</section>
+<div class="chart-wrap">
+  <canvas id="monthChart" width="640" height="300"></canvas>
+</div>
 {% endif %}
 
-<section class="log-table">
-  <table>
-    <thead>
-      <tr>
-        <th>Day</th>
-        <th>Weight (kg)</th>
-        <th>Trend (kg)</th>
-        <th>Δ Trend</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for r in day_rows %}
-      <tr class="{{ 'today' if r.is_today else '' }} {{ 'has-data' if r.weight else '' }}">
-        <td class="day-col">{{ "%02d"|format(r.day) }}{% if r.is_today %} ◀{% endif %}</td>
-        <td class="num">{{ "%.1f"|format(r.weight) if r.weight is not none else "—" }}</td>
-        <td class="num">{{ "%.2f"|format(r.trend) if r.trend is not none else "—" }}</td>
-        <td class="num delta">
-          {% if r.delta is not none %}
-            <span class="{{ 'pos' if r.delta > 0 else 'neg' if r.delta < 0 else '' }}">
-              {{ "%+.2f"|format(r.delta) }}
-            </span>
-          {% else %}—{% endif %}
-        </td>
-        <td>
-          {% if r.weight is not none %}
-          <form method="POST" action="/entry/{{ r.date }}/delete" style="display:inline">
-            <button type="submit" class="del-btn" title="Delete" onclick="return confirm('Delete entry for {{ r.date }}?')">✕</button>
-          </form>
-          {% endif %}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</section>
+{% if week_delta is not none %}
+<p class="trendan">
+  Weekly <span>{{ "loss" if week_delta < 0 else "gain" }}</span>
+  <strong>{{ "%.2f"|format(week_delta|abs) }}</strong> kilograms.&nbsp;
+  {% if daily_calories %}
+  Daily <span>{{ "deficit" if week_delta < 0 else "surplus" }}</span>:
+  <strong>{{ daily_calories }}</strong> calories.
+  {% endif %}
+  {% if mean_bmi and last_bmi %}
+  <br>Body mass index: mean <strong>{{ mean_bmi }}</strong>, most recent <strong>{{ last_bmi }}</strong>.
+  {% endif %}
+</p>
+{% endif %}
+
+<table border="1" class="mlog">
+<thead>
+<tr>
+  <th colspan="2">Date</th>
+  <th>Weight</th>
+  <th>Trend</th>
+  <th>Var.</th>
+  <th>Comments</th>
+</tr>
+</thead>
+<tbody>
+{% for r in day_rows %}
+<tr class="{{ 'today' if r.is_today else '' }}">
+  <th class="daynum">{{ r.day }}</th>
+  <td class="dow">{{ r.dow }}</td>
+  <td class="wcell">
+    <input type="text" name="w{{ r.day }}" id="w{{ r.day }}" size="6"
+      value="{{ '%.1f'|format(r.weight) if r.weight is not none else '' }}"
+      class="winput">
+  </td>
+  <td class="tcell">
+    {% if r.trend is not none %}{{ "%.1f"|format(r.trend) }}{% else %}&nbsp;{% endif %}
+  </td>
+  <td class="vcell r">
+    {% if r.var is not none %}
+      <span class="{{ 'g' if r.var < 0 else 'r' if r.var > 0 else 'bk' }}">
+        {{ "%+.1f"|format(r.var) }}
+      </span>
+    {% else %}&nbsp;{% endif %}
+  </td>
+  <td class="ccell">
+    <input type="text" name="c{{ r.day }}" id="c{{ r.day }}" size="50" maxlength="4096"
+      value="{{ r.comment|e }}">
+  </td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+<p class="mlog_buttons">
+  <input type="submit" value=" Update ">
+  &nbsp;
+  <input type="reset" value=" Reset ">
+</p>
+</form>
 
 {% if chart_labels %}
 <script>
-const labels = {{ chart_labels | tojson }};
-const weightData = {{ chart_weight | tojson }};
-const trendData = {{ chart_trend | tojson }};
-
 new Chart(document.getElementById('monthChart'), {
   type: 'line',
   data: {
-    labels: labels,
+    labels: {{ chart_labels | tojson }},
     datasets: [
       {
         label: 'Weight',
-        data: weightData,
-        borderColor: '#3a7bd5',
-        backgroundColor: 'rgba(58,123,213,0.1)',
-        pointRadius: 4,
-        pointHoverRadius: 6,
+        data: {{ chart_weight | tojson }},
+        borderColor: '#0000cc',
+        backgroundColor: 'rgba(0,0,204,0.07)',
+        pointRadius: 3,
+        pointHoverRadius: 5,
         tension: 0.1,
         spanGaps: false,
       },
       {
         label: 'Trend',
-        data: trendData,
-        borderColor: '#e03030',
+        data: {{ chart_trend | tojson }},
+        borderColor: '#cc0000',
         backgroundColor: 'transparent',
         pointRadius: 2,
         tension: 0.3,
@@ -110,7 +117,7 @@ new Chart(document.getElementById('monthChart'), {
     ]
   },
   options: {
-    responsive: true,
+    responsive: false,
     interaction: { mode: 'index', intersect: false },
     plugins: {
       legend: { position: 'top' },
@@ -121,7 +128,7 @@ new Chart(document.getElementById('monthChart'), {
       }
     },
     scales: {
-      x: { title: { display: true, text: 'Day of month' } },
+      x: { title: { display: true, text: 'Day' } },
       y: { title: { display: true, text: 'kg' } }
     }
   }

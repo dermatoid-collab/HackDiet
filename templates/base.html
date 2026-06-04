@@ -3,23 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{% block title %}The Hacker's Diet{% endblock %}</title>
+<title>{% block title %}The Hacker's Diet Online{% endblock %}</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
-<div id="wrapper">
-  <header>
-    <h1><a href="/">The Hacker's Diet <span>Online</span></a></h1>
-    <nav>{% block nav %}{% endblock %}</nav>
-  </header>
-  <main>
-    {% block content %}{% endblock %}
-  </main>
-  <footer>
-    <p>Inspired by <em>The Hacker's Diet</em> by John Walker &mdash;
-    <a href="/demo">Load demo data</a></p>
-  </footer>
+
+<table class="title">
+<tr>
+  <td align="center" valign="top" style="padding:0.5rem 1rem;">
+    <span class="title1">The Hacker's Diet <em>Online</em></span><br>
+    <span class="title2">How to lose weight and hair through stress and poor nutrition</span>
+  </td>
+</tr>
+</table>
+
+{% block nav %}{% endblock %}
+
+<div id="main">
+  {% block content %}{% endblock %}
 </div>
+
+<p class="footer">
+  Inspired by <em>The Hacker's Diet</em> by John Walker &mdash;
+  <a href="/demo">Load demo data</a>
+</p>
+
 </body>
 </html>
