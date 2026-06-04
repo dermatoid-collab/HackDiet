@@ -44,6 +44,24 @@ def init_db():
     db.close()
 
 
+def linear_regression_kg_per_week(date_strs, trends):
+    """Compute kg/week via linear regression on (day_number, trend) pairs."""
+    n = len(trends)
+    if n < 2:
+        return None
+    d0 = datetime.strptime(date_strs[0], "%Y-%m-%d").date()
+    xs = [(datetime.strptime(d, "%Y-%m-%d").date() - d0).days for d in date_strs]
+    ys = trends
+    sx = sum(xs); sy = sum(ys)
+    sxy = sum(x * y for x, y in zip(xs, ys))
+    sx2 = sum(x * x for x in xs)
+    denom = n * sx2 - sx * sx
+    if denom == 0:
+        return None
+    slope_per_day = (n * sxy - sx * sy) / denom  # kg/day
+    return slope_per_day * 7  # kg/week
+
+
 def recalculate_trends():
     db = get_db()
     rows = db.execute("SELECT date, weight FROM entries ORDER BY date ASC").fetchall()
@@ -278,13 +296,15 @@ def trend_view():
         d_from = today - timedelta(days=n_days - 1)
         d_to = today
         rows = db.execute(
-            "SELECT trend FROM entries WHERE date >= ? AND date <= ? AND trend IS NOT NULL ORDER BY date ASC",
+            "SELECT date, trend FROM entries WHERE date >= ? AND date <= ? AND trend IS NOT NULL ORDER BY date ASC",
             (d_from.isoformat(), d_to.isoformat())
         ).fetchall()
         if len(rows) >= 2:
+            date_strs = [r["date"] for r in rows]
             trends = [r["trend"] for r in rows]
-            kg_per_week = round((trends[-1] - trends[0]) / (n_days / 7), 2)
-            cal_per_day = int(abs(kg_per_week) * 7700 / 7)
+            kg_per_week = linear_regression_kg_per_week(date_strs, trends)
+            kg_per_week = round(kg_per_week, 2) if kg_per_week is not None else None
+            cal_per_day = int(kg_per_week * 7700 / 7) if kg_per_week is not None else None
             t_min = round(min(trends), 1)
             t_mean = round(sum(trends) / len(trends), 1)
             t_max = round(max(trends), 1)
@@ -310,14 +330,15 @@ def trend_view():
     custom_stats = None
     if custom_from and custom_to:
         rows = db.execute(
-            "SELECT trend FROM entries WHERE date >= ? AND date <= ? AND trend IS NOT NULL ORDER BY date ASC",
+            "SELECT date, trend FROM entries WHERE date >= ? AND date <= ? AND trend IS NOT NULL ORDER BY date ASC",
             (custom_from.isoformat(), custom_to.isoformat())
         ).fetchall()
-        n_days = (custom_to - custom_from).days + 1
-        if len(rows) >= 2 and n_days > 0:
+        if len(rows) >= 2:
+            date_strs = [r["date"] for r in rows]
             trends = [r["trend"] for r in rows]
-            kg_per_week = round((trends[-1] - trends[0]) / (n_days / 7), 2)
-            cal_per_day = int(abs(kg_per_week) * 7700 / 7)
+            kg_per_week = linear_regression_kg_per_week(date_strs, trends)
+            kg_per_week = round(kg_per_week, 2) if kg_per_week is not None else None
+            cal_per_day = int(kg_per_week * 7700 / 7) if kg_per_week is not None else None
             custom_stats = {
                 "kg_per_week": kg_per_week,
                 "cal_per_day": cal_per_day,

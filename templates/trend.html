@@ -20,11 +20,17 @@
   <td>{{ s.label }}</td>
   <td class="w">
     {% if s.kg_per_week is not none %}
-      {% if s.kg_per_week > 0 %}+{% endif %}{{ "%.2f"|format(s.kg_per_week) }}
+      <span class="{{ 'g' if s.kg_per_week < 0 else 'r' }}">
+        {% if s.kg_per_week > 0 %}+{% endif %}{{ "%.2f"|format(s.kg_per_week) }}
+      </span>
     {% else %}&mdash;{% endif %}
   </td>
   <td class="e">
-    {% if s.cal_per_day is not none %}{{ s.cal_per_day }}{% else %}&mdash;{% endif %}
+    {% if s.cal_per_day is not none %}
+      <span class="{{ 'g' if s.cal_per_day < 0 else 'r' }}">
+        {% if s.cal_per_day > 0 %}+{% endif %}{{ s.cal_per_day }}
+      </span>
+    {% else %}&mdash;{% endif %}
   </td>
   <td class="w">{% if s.t_min is not none %}{{ "%.1f"|format(s.t_min) }}{% else %}&mdash;{% endif %}</td>
   <td class="w">{% if s.t_mean is not none %}{{ "%.1f"|format(s.t_mean) }}{% else %}&mdash;{% endif %}</td>
@@ -44,9 +50,15 @@
     <tr>
       <td>Custom</td>
       <td class="w">
-        {% if custom_stats.kg_per_week > 0 %}+{% endif %}{{ "%.2f"|format(custom_stats.kg_per_week) }}
+        <span class="{{ 'g' if custom_stats.kg_per_week < 0 else 'r' }}">
+          {% if custom_stats.kg_per_week > 0 %}+{% endif %}{{ "%.2f"|format(custom_stats.kg_per_week) }}
+        </span>
       </td>
-      <td class="e">{{ custom_stats.cal_per_day }}</td>
+      <td class="e">
+        <span class="{{ 'g' if custom_stats.cal_per_day < 0 else 'r' }}">
+          {% if custom_stats.cal_per_day > 0 %}+{% endif %}{{ custom_stats.cal_per_day }}
+        </span>
+      </td>
       <td class="w">{{ "%.1f"|format(custom_stats.t_min) }}</td>
       <td class="w">{{ "%.1f"|format(custom_stats.t_mean) }}</td>
       <td class="w">{{ "%.1f"|format(custom_stats.t_max) }}</td>
