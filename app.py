@@ -9,7 +9,7 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "change-me-in-production-please")
 app.permanent_session_lifetime = timedelta(days=30)
 DB_PATH = os.path.join(os.path.dirname(__file__), "hackdiet.db")
-PASSWORD = os.environ.get("HACKDIET_PASSWORD", "hackdiet")
+PASSWORD = os.environ.get("HACKDIET_PASSWORD", "dermate")
 
 ALPHA = 0.1
 HEIGHT_M = 1.78
@@ -499,6 +499,34 @@ def settings_view():
 def download_db():
     from flask import send_file
     return send_file(DB_PATH, as_attachment=True, download_name="hackdiet.db")
+
+
+@app.route("/download/xml")
+@login_required
+def download_xml():
+    from flask import Response
+    db = get_db()
+    rows = db.execute(
+        "SELECT date, weight, comment FROM entries ORDER BY date ASC"
+    ).fetchall()
+    lines = ['<?xml version="1.0" encoding="UTF-8"?>', '<hackdiet>']
+    cur_ym = None
+    for r in rows:
+        parts = r["date"].split("-")
+        ym = (parts[0], parts[1])
+        if ym != cur_ym:
+            if cur_ym is not None:
+                lines.append('  </monthlog>')
+            lines.append(f'  <monthlog year="{parts[0]}" month="{parts[1]}">')
+            cur_ym = ym
+        comment = (r["comment"] or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        lines.append(f'    <day day="{parts[2]}" weight="{r["weight"]}" comment="{comment}"/>')
+    if cur_ym is not None:
+        lines.append('  </monthlog>')
+    lines.append('</hackdiet>')
+    xml = "\n".join(lines)
+    return Response(xml, mimetype="application/xml",
+        headers={"Content-Disposition": "attachment; filename=hackdiet_db.xml"})
 
 
 if __name__ == "__main__":

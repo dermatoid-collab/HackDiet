@@ -13,8 +13,12 @@
     <tr>
       <td style="padding: 10px 20px; text-align: center;">
         <a href="{{ url_for('download_db') }}" class="btn-download">&#8659; Download database (hackdiet.db)</a>
-        <p style="font-size:0.82rem; color:#666; margin: 6px 0 0;">
+        <p style="font-size:0.82rem; color:#666; margin: 6px 0 12px;">
           Scarica il file SQLite con tutte le pesate.
+        </p>
+        <a href="{{ url_for('download_xml') }}" class="btn-download">&#8659; Download backup XML (hackdiet_db.xml)</a>
+        <p style="font-size:0.82rem; color:#666; margin: 6px 0 0;">
+          Scarica il backup in formato XML compatibile con HackDiet originale.
         </p>
       </td>
     </tr>
