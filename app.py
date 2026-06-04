@@ -7,6 +7,7 @@ import calendar
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "change-me-in-production-please")
+app.permanent_session_lifetime = timedelta(days=30)
 DB_PATH = os.path.join(os.path.dirname(__file__), "hackdiet.db")
 PASSWORD = os.environ.get("HACKDIET_PASSWORD", "hackdiet")
 
@@ -123,6 +124,8 @@ def login():
     if request.method == "POST":
         if request.form.get("password") == PASSWORD:
             session["logged_in"] = True
+            if request.form.get("remember"):
+                session.permanent = True
             return redirect(url_for("index"))
         error = "Password errata."
     return render_template("login.html", error=error)

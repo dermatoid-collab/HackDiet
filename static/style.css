@@ -80,6 +80,10 @@ a.navarrow:hover { color: #cc0000; }
   text-align: center;
   margin: 8px 0;
 }
+.chart-wrap canvas {
+  display: block;
+  margin: 0 auto;
+}
 
 /* Trend stats */
 p.trendan {
