@@ -6,7 +6,9 @@
 <h1 class="c">Chart Workshop</h1>
 
 {% if chart_labels %}
-<canvas id="chartCanvas" class="chart-workshop-canvas" width="800" height="500"></canvas>
+<div class="chart-workshop">
+  <canvas id="chartCanvas"></canvas>
+</div>
 {% else %}
 <p class="centred">No data for the selected period.</p>
 {% endif %}
@@ -81,7 +83,8 @@ new Chart(document.getElementById('chartCanvas'), {
     ]
   },
   options: {
-    responsive: false,
+    responsive: true,
+    maintainAspectRatio: false,
     interaction: { mode: 'index', intersect: false },
     plugins: {
       legend: { position: 'top' },

@@ -11,7 +11,7 @@
 
 {% if chart_labels %}
 <div class="chart-year">
-  <canvas id="yearChart" width="700" height="350"></canvas>
+  <canvas id="yearChart"></canvas>
 </div>
 {% else %}
 <p style="text-align:center;color:#888;">No data for {{ year }}.</p>
@@ -75,7 +75,8 @@ new Chart(document.getElementById('yearChart'), {
     ]
   },
   options: {
-    responsive: false,
+    responsive: true,
+    maintainAspectRatio: false,
     interaction: { mode: 'index', intersect: false },
     plugins: {
       legend: { position: 'top' },
