@@ -1,6 +1,6 @@
 body {
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: 14px;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 16px;
   background: #ffffff;
   color: #000000;
   margin: 0;
@@ -26,33 +26,45 @@ table.title {
 }
 
 /* Navbar */
-table.navbar {
+nav.navbar {
   width: 100%;
   background: #000080;
-  border-collapse: collapse;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
   margin-bottom: 8px;
+  position: relative;
 }
-table.navbar td {
-  padding: 4px 12px;
+.navbar-tabs {
+  display: flex;
+  justify-content: center;
+}
+.navbar-right {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+}
+a.navbar-tab {
+  display: block;
+  padding: 6px 16px;
   color: #ffffff;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
+  font-weight: 500;
   white-space: nowrap;
-}
-table.navbar td.active {
-  background: #ffffff;
-  color: #000080;
-  font-weight: bold;
-  border-top: 2px solid #000080;
-}
-table.navbar td.pad {
-  width: 100%;
-}
-a.navbar {
-  color: #ffffff;
   text-decoration: none;
 }
-a.navbar:hover {
+a.navbar-tab:hover {
   text-decoration: underline;
+}
+a.navbar-tab.active {
+  background: #ffffff;
+  color: #000080;
+  font-weight: 700;
+  border-top: 2px solid #000080;
+  padding-top: 4px;
 }
 
 /* Main content */
@@ -234,7 +246,19 @@ p.footer {
 }
 p.footer a { color: #666; }
 
-h1.c { text-align: center; color: #000080; font-size: 1.2rem; margin: 8px 0; }
+h1.c { text-align: center; color: #000080; font-size: 1.3rem; margin: 8px 0; }
+a.btn-download {
+  display: inline-block;
+  background: #000080;
+  color: #fff;
+  text-decoration: none;
+  padding: 8px 20px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  border: 1px solid #000060;
+  cursor: pointer;
+}
+a.btn-download:hover { background: #0000aa; }
 table.trendan { border-collapse: collapse; margin: 8px auto; font-size: 0.85rem; }
 table.trendan th, table.trendan td { border: 1px solid #aaa; padding: 3px 10px; }
 table.trendan thead th { background: #000080; color: #fff; font-weight: normal; }

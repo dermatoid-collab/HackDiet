@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=820">
 <title>{% block title %}The Hacker's Diet Online{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
@@ -18,24 +21,18 @@
 </tr>
 </table>
 
-<table class="navbar">
-  <tr>
-    <td {% if active_tab=='log' %}class="active"{% endif %} title="Display the current monthly log">
-      {% if active_tab=='log' %}Log{% else %}<a class="navbar" href="{{ url_for('index') }}">Log</a>{% endif %}
-    </td>
-    <td {% if active_tab=='history' %}class="active"{% endif %} title="Show yearly history">
-      {% if active_tab=='history' %}History{% else %}<a class="navbar" href="{{ url_for('year_view', year=current_year) }}">History</a>{% endif %}
-    </td>
-    <td {% if active_tab=='chart' %}class="active"{% endif %} title="Generate historical charts">
-      {% if active_tab=='chart' %}Chart{% else %}<a class="navbar" href="{{ url_for('chart_view') }}">Chart</a>{% endif %}
-    </td>
-    <td {% if active_tab=='trend' %}class="active"{% endif %} title="Analyse weight trend">
-      {% if active_tab=='trend' %}Trend{% else %}<a class="navbar" href="{{ url_for('trend_view') }}">Trend</a>{% endif %}
-    </td>
-    <td class="pad"></td>
-    <td><a class="navbar" href="{{ url_for('logout') }}" title="Sign out">Sign&nbsp;Out</a></td>
-  </tr>
-</table>
+<nav class="navbar">
+  <div class="navbar-tabs">
+    <a class="navbar-tab {% if active_tab=='log' %}active{% endif %}" href="{{ url_for('index') }}" title="Display the current monthly log">Log</a>
+    <a class="navbar-tab {% if active_tab=='history' %}active{% endif %}" href="{{ url_for('year_view', year=current_year) }}" title="Show yearly history">History</a>
+    <a class="navbar-tab {% if active_tab=='chart' %}active{% endif %}" href="{{ url_for('chart_view') }}" title="Generate historical charts">Chart</a>
+    <a class="navbar-tab {% if active_tab=='trend' %}active{% endif %}" href="{{ url_for('trend_view') }}" title="Analyse weight trend">Trend</a>
+    <a class="navbar-tab {% if active_tab=='settings' %}active{% endif %}" href="{{ url_for('settings_view') }}" title="Settings">Settings</a>
+  </div>
+  <div class="navbar-right">
+    <a class="navbar-tab" href="{{ url_for('logout') }}" title="Sign out">Sign&nbsp;Out</a>
+  </div>
+</nav>
 
 <div id="main">
   {% block content %}{% endblock %}

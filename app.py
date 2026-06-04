@@ -488,6 +488,19 @@ def demo():
     return redirect(url_for("index"))
 
 
+@app.route("/settings")
+@login_required
+def settings_view():
+    return render_template("settings.html", active_tab='settings')
+
+
+@app.route("/download/db")
+@login_required
+def download_db():
+    from flask import send_file
+    return send_file(DB_PATH, as_attachment=True, download_name="hackdiet.db")
+
+
 if __name__ == "__main__":
     init_db()
     app.run(debug=True)
