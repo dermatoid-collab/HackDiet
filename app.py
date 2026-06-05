@@ -273,14 +273,9 @@ def month_view(year, month):
             "is_today": ds == today.isoformat(),
         })
 
-    chart_labels, chart_weight, chart_trend = [], [], []
-    for r in day_rows:
-        if r["weight"] is not None or r["trend"] is not None:
-            chart_labels.append(r["day"])
-            chart_weight.append(r["weight"])
-            chart_trend.append(round(r["trend"], 1) if r["trend"] else None)
-
-    kcal_labels = [r["day"] for r in day_rows]
+    chart_labels = [r["day"] for r in day_rows]
+    chart_weight = [r["weight"] for r in day_rows]
+    chart_trend = [round(r["trend"], 1) if r["trend"] is not None else None for r in day_rows]
     kcal_data = [r["kcal"] for r in day_rows]
 
     last_entries = db.execute(
@@ -315,7 +310,6 @@ def month_view(year, month):
         chart_labels=chart_labels,
         chart_weight=chart_weight,
         chart_trend=chart_trend,
-        kcal_labels=kcal_labels,
         kcal_data=kcal_data,
         week_delta=week_delta,
         daily_calories=daily_calories,
