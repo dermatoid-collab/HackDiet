@@ -67,6 +67,46 @@
 
 <br>
 
+<table class="trendan" style="width:100%; max-width:560px;">
+  <thead>
+    <tr><th class="custitle" colspan="2">Dropbox Sync</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td colspan="2" style="padding:10px 16px;">
+        {% if dropbox_sync_error %}
+        <p style="color:{% if dropbox_sync_error.startswith('OK') %}#007700{% else %}#cc0000{% endif %}; font-size:0.82rem; margin:0 0 8px;">{{ dropbox_sync_error }}</p>
+        {% endif %}
+        {% if dropbox_last_sync != 'Mai' %}
+        <p style="color:#555; font-size:0.82rem; margin:0 0 8px;">Ultima importazione: <strong>{{ dropbox_last_sync }}</strong></p>
+        {% endif %}
+        <form method="post" action="{{ url_for('settings_dropbox_save') }}">
+          <table style="border-collapse:collapse;">
+            <tr>
+              <td style="padding:4px 8px 4px 0; font-size:0.85rem;">Access Token:</td>
+              <td style="padding:4px 0;">
+                <input type="password" name="dropbox_token"
+                  placeholder="{{ '(salvato)' if dropbox_token else '(inserisci token)' }}"
+                  style="font-size:0.85rem; padding:3px 6px; border:1px solid #999; width:220px;">
+              </td>
+            </tr>
+            <tr>
+              <td colspan="2" style="padding:10px 0 4px;">
+                <input type="submit" value=" Salva e importa " class="btn-settings">
+              </td>
+            </tr>
+          </table>
+        </form>
+        <form method="post" action="{{ url_for('settings_dropbox_sync') }}" style="margin-top:6px;">
+          <input type="submit" value=" Importa ora da Dropbox " class="btn-settings-secondary">
+        </form>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<br>
+
 <table class="trendan">
   <thead>
     <tr><th class="custitle">Download dati</th></tr>

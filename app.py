@@ -218,6 +218,11 @@ def login():
             if get_config("garmin_email"):
                 t = threading.Thread(target=_sync_and_store_error, args=(30,), daemon=True)
                 t.start()
+            # Import kcal from Dropbox in background on every login
+            dropbox_token = get_config("dropbox_token")
+            if dropbox_token:
+                t2 = threading.Thread(target=_dropbox_import_and_store, args=(dropbox_token,), daemon=True)
+                t2.start()
             return redirect(url_for("index"))
         error = "Password errata."
     return render_template("login.html", error=error)
@@ -553,8 +558,13 @@ def settings_view():
     garmin_email = get_config("garmin_email", "")
     last_sync = get_config("last_sync", "Mai")
     sync_error = get_config("sync_error", "")
+    dropbox_token = get_config("dropbox_token", "")
+    dropbox_last_sync = get_config("dropbox_last_sync", "Mai")
+    dropbox_sync_error = get_config("dropbox_sync_error", "")
     return render_template("settings.html", active_tab='settings',
-        garmin_email=garmin_email, last_sync=last_sync, sync_error=sync_error)
+        garmin_email=garmin_email, last_sync=last_sync, sync_error=sync_error,
+        dropbox_token=dropbox_token, dropbox_last_sync=dropbox_last_sync,
+        dropbox_sync_error=dropbox_sync_error)
 
 
 @app.route("/settings/garmin", methods=["POST"])
@@ -585,6 +595,77 @@ def settings_garmin_sync():
 def _sync_and_store_error(days):
     err, updated = garmin_sync(days)
     set_config("sync_error", f"{err}" if err else f"OK — {updated} giorni aggiornati")
+
+
+DROPBOX_PATH = "/hackdiet_kcal.json"
+
+
+def dropbox_upload_kcal(token, kcal_map):
+    import requests as req
+    import json as _json
+    data = _json.dumps(kcal_map).encode()
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Dropbox-API-Arg": _json.dumps({"path": DROPBOX_PATH, "mode": "overwrite", "autorename": False}),
+        "Content-Type": "application/octet-stream",
+    }
+    r = req.post("https://content.dropboxapi.com/2/files/upload", headers=headers, data=data, timeout=30)
+    r.raise_for_status()
+
+
+def dropbox_download_kcal(token):
+    import requests as req
+    import json as _json
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Dropbox-API-Arg": _json.dumps({"path": DROPBOX_PATH}),
+    }
+    r = req.post("https://content.dropboxapi.com/2/files/download", headers=headers, timeout=30)
+    r.raise_for_status()
+    return r.json()
+
+
+def _dropbox_import_and_store(token):
+    try:
+        kcal_map = dropbox_download_kcal(token)
+        db = sqlite3.connect(DB_PATH)
+        db.row_factory = sqlite3.Row
+        updated = 0
+        for ds, kcal in kcal_map.items():
+            if kcal and int(kcal) > 0:
+                existing = db.execute("SELECT id FROM entries WHERE date=?", (ds,)).fetchone()
+                if existing:
+                    db.execute("UPDATE entries SET kcal=? WHERE date=?", (int(kcal), ds))
+                    updated += 1
+        db.commit()
+        db.close()
+        set_config("dropbox_sync_error", f"OK — {updated} giorni aggiornati")
+        set_config("dropbox_last_sync", datetime.now().strftime("%Y-%m-%d %H:%M"))
+    except Exception as e:
+        set_config("dropbox_sync_error", str(e))
+
+
+@app.route("/settings/dropbox", methods=["POST"])
+@login_required
+def settings_dropbox_save():
+    token = request.form.get("dropbox_token", "").strip()
+    if token:
+        set_config("dropbox_token", token)
+    token = get_config("dropbox_token")
+    if token:
+        t = threading.Thread(target=_dropbox_import_and_store, args=(token,), daemon=True)
+        t.start()
+    return redirect(url_for("settings_view"))
+
+
+@app.route("/settings/dropbox/sync", methods=["POST"])
+@login_required
+def settings_dropbox_sync():
+    token = get_config("dropbox_token")
+    if token:
+        t = threading.Thread(target=_dropbox_import_and_store, args=(token,), daemon=True)
+        t.start()
+    return redirect(url_for("settings_view"))
 
 
 @app.route("/settings/garmin/test")

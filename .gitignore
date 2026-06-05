@@ -3,3 +3,4 @@ __pycache__/
 hackdiet.db
 *.db
 .env
+sync_config.json

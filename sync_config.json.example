@@ -1,0 +1,7 @@
+{
+    "garmin_email": "tua@email.com",
+    "garmin_password": "tuapassword",
+    "dropbox_token": "il_tuo_token_dropbox",
+    "days_back": 365,
+    "db_path": "H:/hackdiet/hackdiet.db"
+}
