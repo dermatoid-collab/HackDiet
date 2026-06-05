@@ -98,7 +98,7 @@ def garmin_sync(days_back=30):
         db = sqlite3.connect(DB_PATH)
         db.row_factory = sqlite3.Row
 
-        # Sync kcal from daily nutrition (MFP → Garmin)
+        updated = 0
         cur = start
         while cur <= end:
             ds = cur.isoformat()
@@ -113,6 +113,7 @@ def garmin_sync(days_back=30):
                     existing = db.execute("SELECT id FROM entries WHERE date=?", (ds,)).fetchone()
                     if existing:
                         db.execute("UPDATE entries SET kcal=? WHERE date=?", (int(kcal), ds))
+                        updated += 1
             except Exception:
                 pass
             cur += timedelta(days=1)
@@ -120,9 +121,42 @@ def garmin_sync(days_back=30):
         db.commit()
         db.close()
         set_config("last_sync", date.today().isoformat())
-        return None  # no error
+        set_config("sync_error", "")
+        return None, updated
     except Exception as e:
-        return str(e)
+        err = str(e)
+        set_config("sync_error", err)
+        return err, 0
+
+
+def garmin_test():
+    """Returns diagnostic info as a string."""
+    email = get_config("garmin_email")
+    password = get_config("garmin_password")
+    if not email or not password:
+        return "❌ Credenziali non configurate."
+    lines = []
+    try:
+        from garminconnect import Garmin
+        lines.append("✅ garminconnect importato")
+        client = Garmin(email, password)
+        lines.append(f"✅ Client creato per {email}")
+        client.login()
+        lines.append("✅ Login riuscito")
+        today_s = date.today().isoformat()
+        try:
+            nutrition = client.get_nutrition_day(today_s)
+            lines.append(f"✅ get_nutrition_day({today_s}) → {nutrition}")
+        except Exception as e:
+            lines.append(f"⚠️ get_nutrition_day fallito: {e}")
+            try:
+                stats = client.get_stats(today_s)
+                lines.append(f"✅ get_stats → keys: {list(stats.keys()) if stats else 'vuoto'}")
+            except Exception as e2:
+                lines.append(f"❌ get_stats fallito: {e2}")
+    except Exception as e:
+        lines.append(f"❌ Errore: {e}")
+    return "\n".join(lines)
 
 
 def trendfit_slope_per_day(d_from, d_to, db):
@@ -186,7 +220,7 @@ def login():
                 session.permanent = True
             # Sync Garmin in background on every login
             if get_config("garmin_email"):
-                t = threading.Thread(target=garmin_sync, args=(30,), daemon=True)
+                t = threading.Thread(target=_sync_and_store_error, args=(30,), daemon=True)
                 t.start()
             return redirect(url_for("index"))
         error = "Password errata."
@@ -554,8 +588,16 @@ def settings_garmin_sync():
 
 
 def _sync_and_store_error(days):
-    err = garmin_sync(days)
-    set_config("sync_error", err or "")
+    err, updated = garmin_sync(days)
+    set_config("sync_error", f"{err}" if err else f"OK — {updated} giorni aggiornati")
+
+
+@app.route("/settings/garmin/test")
+@login_required
+def settings_garmin_test():
+    from flask import Response
+    result = garmin_test()
+    return Response(f"<pre style='font-size:14px;padding:20px'>{result}</pre>", mimetype="text/html")
 
 
 @app.route("/download/db")
