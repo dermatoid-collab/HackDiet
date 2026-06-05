@@ -131,7 +131,11 @@ new Chart(document.getElementById('monthChart'), {
       }
     },
     scales: {
-      x: { title: { display: true, text: 'Day' } },
+      x: {
+        title: { display: true, text: 'Day' },
+        ticks: { autoSkip: false },
+        grid: { display: true }
+      },
       y: { title: { display: true, text: 'kg' } }
     }
   }
@@ -165,7 +169,11 @@ new Chart(document.getElementById('kcalChart'), {
       }
     },
     scales: {
-      x: { title: { display: true, text: 'Day' } },
+      x: {
+        title: { display: true, text: 'Day' },
+        ticks: { autoSkip: false },
+        grid: { display: true }
+      },
       y: { title: { display: true, text: 'kcal' }, beginAtZero: true }
     }
   }
