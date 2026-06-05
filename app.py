@@ -608,7 +608,7 @@ def download_db():
 def download_xml():
     from flask import Response
     db = get_db()
-    rows = db.execute("SELECT date, weight, comment FROM entries ORDER BY date ASC").fetchall()
+    rows = db.execute("SELECT date, weight, comment, kcal FROM entries ORDER BY date ASC").fetchall()
     lines = ['<?xml version="1.0" encoding="UTF-8"?>', '<hackdiet>']
     cur_ym = None
     for r in rows:
@@ -620,7 +620,8 @@ def download_xml():
             lines.append(f'  <monthlog year="{parts[0]}" month="{parts[1]}">')
             cur_ym = ym
         comment = (r["comment"] or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-        lines.append(f'    <day day="{parts[2]}" weight="{r["weight"]}" comment="{comment}"/>')
+        kcal_attr = f' kcal="{r["kcal"]}"' if r["kcal"] is not None else ""
+        lines.append(f'    <day day="{parts[2]}" weight="{r["weight"]}" comment="{comment}"{kcal_attr}/>')
     if cur_ym is not None:
         lines.append('  </monthlog>')
     lines.append('</hackdiet>')
