@@ -280,6 +280,9 @@ def month_view(year, month):
             chart_weight.append(r["weight"])
             chart_trend.append(round(r["trend"], 1) if r["trend"] else None)
 
+    kcal_labels = [r["day"] for r in day_rows]
+    kcal_data = [r["kcal"] for r in day_rows]
+
     last_entries = db.execute(
         "SELECT trend FROM entries WHERE trend IS NOT NULL ORDER BY date DESC LIMIT 8"
     ).fetchall()
@@ -312,6 +315,8 @@ def month_view(year, month):
         chart_labels=chart_labels,
         chart_weight=chart_weight,
         chart_trend=chart_trend,
+        kcal_labels=kcal_labels,
+        kcal_data=kcal_data,
         week_delta=week_delta,
         daily_calories=daily_calories,
         last_bmi=last_bmi,

@@ -83,6 +83,13 @@
 </p>
 </form>
 
+{% set kcal_any = kcal_data | select('ne', none) | list %}
+{% if kcal_any %}
+<div class="chart-wrap" style="margin-top:16px;">
+  <canvas id="kcalChart" width="640" height="200"></canvas>
+</div>
+{% endif %}
+
 {% if chart_labels %}
 <script>
 new Chart(document.getElementById('monthChart'), {
@@ -126,6 +133,40 @@ new Chart(document.getElementById('monthChart'), {
     scales: {
       x: { title: { display: true, text: 'Day' } },
       y: { title: { display: true, text: 'kg' } }
+    }
+  }
+});
+</script>
+{% endif %}
+
+{% if kcal_any %}
+<script>
+new Chart(document.getElementById('kcalChart'), {
+  type: 'bar',
+  data: {
+    labels: {{ kcal_labels | tojson }},
+    datasets: [{
+      label: 'Kcal',
+      data: {{ kcal_data | tojson }},
+      backgroundColor: 'rgba(0, 150, 0, 0.55)',
+      borderColor: '#006600',
+      borderWidth: 1,
+    }]
+  },
+  options: {
+    responsive: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { position: 'top' },
+      tooltip: {
+        callbacks: {
+          label: ctx => ctx.raw != null ? ctx.raw + ' kcal' : '—'
+        }
+      }
+    },
+    scales: {
+      x: { title: { display: true, text: 'Day' } },
+      y: { title: { display: true, text: 'kcal' }, beginAtZero: true }
     }
   }
 });
