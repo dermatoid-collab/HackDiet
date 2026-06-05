@@ -38,6 +38,7 @@
   <th>Weight</th>
   <th>Trend</th>
   <th>Var.</th>
+  <th>Kcal</th>
   <th>Comments</th>
 </tr>
 </thead>
@@ -61,8 +62,13 @@
       </span>
     {% else %}&nbsp;{% endif %}
   </td>
+  <td class="kcell">
+    <input type="text" name="k{{ r.day }}" id="k{{ r.day }}" size="5"
+      value="{{ r.kcal if r.kcal is not none else '' }}"
+      class="kinput">
+  </td>
   <td class="ccell">
-    <input type="text" name="c{{ r.day }}" id="c{{ r.day }}" size="50" maxlength="4096"
+    <input type="text" name="c{{ r.day }}" id="c{{ r.day }}" size="30" maxlength="4096"
       value="{{ r.comment|e }}">
   </td>
 </tr>

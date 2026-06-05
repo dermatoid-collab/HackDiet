@@ -174,12 +174,27 @@ span.g { color: #007700; }   /* negative var = below trend = good */
 span.r { color: #cc0000; }   /* positive var = above trend = bad  */
 span.bk { color: #000000; }
 
+/* Kcal input */
+input.kinput {
+  width: 48px;
+  font-size: 0.85rem;
+  border: 1px solid #999;
+  padding: 1px 3px;
+  font-family: 'Inter', system-ui, sans-serif;
+  text-align: right;
+}
+input.kinput:focus {
+  border-color: #000080;
+  outline: none;
+  background: #f0f8ff;
+}
+
 /* Comment input */
 td.ccell input {
   font-size: 0.82rem;
   border: 1px solid #ccc;
   padding: 1px 3px;
-  width: 380px;
+  width: 160px;
 }
 
 /* Update/Reset buttons */
@@ -259,6 +274,18 @@ a.btn-download {
   cursor: pointer;
 }
 a.btn-download:hover { background: #0000aa; }
+input.btn-settings {
+  background: #000080; color: #fff; border: 1px solid #000060;
+  padding: 5px 16px; cursor: pointer; font-size: 0.85rem;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+input.btn-settings:hover { background: #0000aa; }
+input.btn-settings-secondary {
+  background: #e0e0e0; color: #000; border: 1px solid #999;
+  padding: 5px 16px; cursor: pointer; font-size: 0.85rem;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+input.btn-settings-secondary:hover { background: #cccccc; }
 table.trendan { border-collapse: collapse; margin: 8px auto; font-size: 0.85rem; }
 table.trendan th, table.trendan td { border: 1px solid #aaa; padding: 3px 10px; }
 table.trendan thead th { background: #000080; color: #fff; font-weight: normal; }

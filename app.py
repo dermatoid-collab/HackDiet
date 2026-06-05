@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, g, session
 from functools import wraps
 import sqlite3
 import os
+import threading
 from datetime import date, timedelta, datetime
 import calendar
 
@@ -49,25 +50,82 @@ def init_db():
             comment TEXT DEFAULT ''
         )
     """)
-    # migrate: add comment column if missing
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS config (
+            key TEXT PRIMARY KEY,
+            value TEXT
+        )
+    """)
     cols = [r[1] for r in db.execute("PRAGMA table_info(entries)").fetchall()]
     if "comment" not in cols:
         db.execute("ALTER TABLE entries ADD COLUMN comment TEXT DEFAULT ''")
+    if "kcal" not in cols:
+        db.execute("ALTER TABLE entries ADD COLUMN kcal INTEGER")
     db.commit()
     db.close()
 
 
-CALORIES_PER_KG = 7716  # exact constant from HDiet source (monthlog.pm)
+CALORIES_PER_KG = 7716
+
+
+def get_config(key, default=None):
+    db = sqlite3.connect(DB_PATH)
+    row = db.execute("SELECT value FROM config WHERE key=?", (key,)).fetchone()
+    db.close()
+    return row[0] if row else default
+
+
+def set_config(key, value):
+    db = sqlite3.connect(DB_PATH)
+    db.execute("INSERT INTO config (key,value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", (key, value))
+    db.commit()
+    db.close()
+
+
+def garmin_sync(days_back=30):
+    email = get_config("garmin_email")
+    password = get_config("garmin_password")
+    if not email or not password:
+        return "Credenziali Garmin non configurate."
+    try:
+        from garminconnect import Garmin
+        client = Garmin(email, password)
+        client.login()
+
+        end = date.today()
+        start = end - timedelta(days=days_back)
+
+        db = sqlite3.connect(DB_PATH)
+        db.row_factory = sqlite3.Row
+
+        # Sync kcal from daily nutrition (MFP → Garmin)
+        cur = start
+        while cur <= end:
+            ds = cur.isoformat()
+            try:
+                nutrition = client.get_nutrition_day(ds)
+                kcal = None
+                if nutrition:
+                    kcal = (nutrition.get("totalCalories") or
+                            nutrition.get("calories") or
+                            nutrition.get("netCalories"))
+                if kcal is not None:
+                    existing = db.execute("SELECT id FROM entries WHERE date=?", (ds,)).fetchone()
+                    if existing:
+                        db.execute("UPDATE entries SET kcal=? WHERE date=?", (int(kcal), ds))
+            except Exception:
+                pass
+            cur += timedelta(days=1)
+
+        db.commit()
+        db.close()
+        set_config("last_sync", date.today().isoformat())
+        return None  # no error
+    except Exception as e:
+        return str(e)
 
 
 def trendfit_slope_per_day(d_from, d_to, db):
-    """
-    Exact port of HDiet::trendfit / history::analyseTrend.
-    Iterates every calendar day in [d_from, d_to], carries forward last known
-    trend for days without entries, feeds sequential index into linear regression.
-    Returns slope in kg/day (multiply by 7 for kg/week).
-    """
-    # Build date→trend map for the full range
     rows = db.execute(
         "SELECT date, trend FROM entries WHERE date >= ? AND date <= ? AND trend IS NOT NULL ORDER BY date ASC",
         (d_from.isoformat(), d_to.isoformat())
@@ -79,7 +137,7 @@ def trendfit_slope_per_day(d_from, d_to, db):
     cur = d_from
     while cur <= d_to:
         ds = cur.isoformat()
-        t = trend_map.get(ds, last_trend)  # carry forward
+        t = trend_map.get(ds, last_trend)
         if t is not None:
             n += 1
             s1 += n * t
@@ -92,7 +150,7 @@ def trendfit_slope_per_day(d_from, d_to, db):
     denom = s4 * n - s2 * s2
     if denom == 0 or n < 2:
         return None
-    return (s1 * n - s2 * s3) / denom  # kg/day
+    return (s1 * n - s2 * s3) / denom
 
 
 def recalculate_trends():
@@ -126,6 +184,10 @@ def login():
             session["logged_in"] = True
             if request.form.get("remember"):
                 session.permanent = True
+            # Sync Garmin in background on every login
+            if get_config("garmin_email"):
+                t = threading.Thread(target=garmin_sync, args=(30,), daemon=True)
+                t.start()
             return redirect(url_for("index"))
         error = "Password errata."
     return render_template("login.html", error=error)
@@ -150,7 +212,7 @@ def month_view(year, month):
     db = get_db()
     month_str = f"{year:04d}-{month:02d}"
     rows = db.execute(
-        "SELECT date, weight, trend, comment FROM entries WHERE date LIKE ? ORDER BY date ASC",
+        "SELECT date, weight, trend, comment, kcal FROM entries WHERE date LIKE ? ORDER BY date ASC",
         (month_str + "-%",)
     ).fetchall()
     entries_by_day = {r["date"]: r for r in rows}
@@ -166,7 +228,7 @@ def month_view(year, month):
         weight = entry["weight"] if entry else None
         trend = entry["trend"] if entry else None
         comment = entry["comment"] if entry else ""
-        # var = weight - trend (negative = below trend = good/green)
+        kcal = entry["kcal"] if entry else None
         var = round(weight - trend, 1) if (weight is not None and trend is not None) else None
         dow = day_names[date(year, month, d).weekday()]
         day_rows.append({
@@ -176,11 +238,11 @@ def month_view(year, month):
             "trend": trend,
             "var": var,
             "comment": comment or "",
+            "kcal": kcal,
             "dow": dow,
             "is_today": ds == today.isoformat(),
         })
 
-    # chart data
     chart_labels, chart_weight, chart_trend = [], [], []
     for r in day_rows:
         if r["weight"] is not None or r["trend"] is not None:
@@ -188,7 +250,6 @@ def month_view(year, month):
             chart_weight.append(r["weight"])
             chart_trend.append(round(r["trend"], 1) if r["trend"] else None)
 
-    # stats: weekly delta from last 7 trend entries
     last_entries = db.execute(
         "SELECT trend FROM entries WHERE trend IS NOT NULL ORDER BY date DESC LIMIT 8"
     ).fetchall()
@@ -198,7 +259,6 @@ def month_view(year, month):
         week_delta = round(last_entries[0]["trend"] - last_entries[6]["trend"], 2)
         daily_calories = round(abs(week_delta) / 7 * CALORIES_PER_KG)
 
-    # BMI from last weight
     last_weight_row = db.execute(
         "SELECT weight FROM entries ORDER BY date DESC LIMIT 1"
     ).fetchone()
@@ -242,6 +302,8 @@ def month_update(year, month):
         ds = f"{year:04d}-{month:02d}-{d:02d}"
         w_str = request.form.get(f"w{d}", "").strip().replace(",", ".")
         comment = request.form.get(f"c{d}", "").strip()
+        kcal_str = request.form.get(f"k{d}", "").strip()
+        kcal = int(kcal_str) if kcal_str.isdigit() else None
 
         existing = db.execute("SELECT weight FROM entries WHERE date=?", (ds,)).fetchone()
 
@@ -251,15 +313,22 @@ def month_update(year, month):
             except ValueError:
                 continue
             db.execute(
-                "INSERT INTO entries (date, weight, comment) VALUES (?,?,?) "
-                "ON CONFLICT(date) DO UPDATE SET weight=excluded.weight, comment=excluded.comment",
-                (ds, weight, comment)
+                "INSERT INTO entries (date, weight, comment, kcal) VALUES (?,?,?,?) "
+                "ON CONFLICT(date) DO UPDATE SET weight=excluded.weight, comment=excluded.comment, kcal=excluded.kcal",
+                (ds, weight, comment, kcal)
             )
             changed = True
         else:
             if existing:
                 db.execute("DELETE FROM entries WHERE date=?", (ds,))
                 changed = True
+            elif kcal is not None:
+                # Save kcal even without weight
+                db.execute(
+                    "INSERT INTO entries (date, weight, comment, kcal) VALUES (?,?,?,?) "
+                    "ON CONFLICT(date) DO UPDATE SET kcal=excluded.kcal",
+                    (ds, 0, comment, kcal)
+                )
 
     db.commit()
     if changed:
@@ -325,11 +394,9 @@ def trend_view():
     db = get_db()
     today = date.today()
 
-    # Get first year in DB
     first_row = db.execute("SELECT MIN(date) as d FROM entries").fetchone()
     first_year = int(first_row["d"][:4]) if first_row["d"] else today.year
 
-    # Custom date range from POST
     custom_from = None
     custom_to = None
     if request.method == "POST":
@@ -340,12 +407,8 @@ def trend_view():
             pass
 
     intervals = [
-        ("Week", 7),
-        ("Fortnight", 14),
-        ("Month", 30),
-        ("Quarter", 91),
-        ("Six months", 182),
-        ("Year", 365),
+        ("Week", 7), ("Fortnight", 14), ("Month", 30),
+        ("Quarter", 91), ("Six months", 182), ("Year", 365),
     ]
 
     stats = []
@@ -361,55 +424,33 @@ def trend_view():
                 (d_from.isoformat(), d_to.isoformat())
             ).fetchall()
             trends = [r["trend"] for r in rows]
-            stats.append({
-                "label": label,
-                "kg_per_week": kg_per_week,
-                "cal_per_day": cal_per_day,
-                "t_min": round(min(trends), 1),
-                "t_mean": round(sum(trends) / len(trends), 1),
-                "t_max": round(max(trends), 1),
-            })
+            stats.append({"label": label, "kg_per_week": kg_per_week, "cal_per_day": cal_per_day,
+                          "t_min": round(min(trends), 1), "t_mean": round(sum(trends)/len(trends), 1), "t_max": round(max(trends), 1)})
         else:
-            stats.append({
-                "label": label,
-                "kg_per_week": None,
-                "cal_per_day": None,
-                "t_min": None,
-                "t_mean": None,
-                "t_max": None,
-            })
+            stats.append({"label": label, "kg_per_week": None, "cal_per_day": None,
+                          "t_min": None, "t_mean": None, "t_max": None})
 
-    # Custom range stats
     custom_stats = None
     if custom_from and custom_to:
         slope = trendfit_slope_per_day(custom_from, custom_to, db)
         if slope is not None:
-            kg_per_week = round(slope * 7, 2)
-            cal_per_day = int(slope * CALORIES_PER_KG)
             rows = db.execute(
                 "SELECT trend FROM entries WHERE date >= ? AND date <= ? AND trend IS NOT NULL",
                 (custom_from.isoformat(), custom_to.isoformat())
             ).fetchall()
             trends = [r["trend"] for r in rows]
             custom_stats = {
-                "kg_per_week": kg_per_week,
-                "cal_per_day": cal_per_day,
+                "kg_per_week": round(slope * 7, 2),
+                "cal_per_day": int(slope * CALORIES_PER_KG),
                 "t_min": round(min(trends), 1),
-                "t_mean": round(sum(trends) / len(trends), 1),
+                "t_mean": round(sum(trends)/len(trends), 1),
                 "t_max": round(max(trends), 1),
             }
 
     years = list(range(first_year, today.year + 1))
-
-    return render_template("trend.html",
-        active_tab='trend',
-        stats=stats,
-        custom_stats=custom_stats,
-        custom_from=custom_from,
-        custom_to=custom_to,
-        years=years,
-        today=today,
-    )
+    return render_template("trend.html", active_tab='trend', stats=stats,
+        custom_stats=custom_stats, custom_from=custom_from, custom_to=custom_to,
+        years=years, today=today)
 
 
 @app.route("/chart", methods=["GET", "POST"])
@@ -423,7 +464,6 @@ def chart_view():
     years = list(range(first_year, today.year + 1))
 
     period = request.form.get("period") or request.args.get("period", "q")
-
     custom_from = None
     custom_to = None
     if period == "c":
@@ -450,21 +490,11 @@ def chart_view():
         (d_from.isoformat(), d_to.isoformat())
     ).fetchall()
 
-    chart_labels = [r["date"] for r in rows]
-    chart_weight = [r["weight"] for r in rows]
-    chart_trend = [round(r["trend"], 1) if r["trend"] else None for r in rows]
-
-    return render_template("chart.html",
-        active_tab='chart',
-        period=period,
-        chart_labels=chart_labels,
-        chart_weight=chart_weight,
-        chart_trend=chart_trend,
-        custom_from=custom_from,
-        custom_to=custom_to,
-        years=years,
-        today=today,
-    )
+    return render_template("chart.html", active_tab='chart', period=period,
+        chart_labels=[r["date"] for r in rows],
+        chart_weight=[r["weight"] for r in rows],
+        chart_trend=[round(r["trend"], 1) if r["trend"] else None for r in rows],
+        custom_from=custom_from, custom_to=custom_to, years=years, today=today)
 
 
 @app.route("/demo")
@@ -488,10 +518,44 @@ def demo():
     return redirect(url_for("index"))
 
 
-@app.route("/settings")
+@app.route("/settings", methods=["GET"])
 @login_required
 def settings_view():
-    return render_template("settings.html", active_tab='settings')
+    garmin_email = get_config("garmin_email", "")
+    last_sync = get_config("last_sync", "Mai")
+    sync_error = get_config("sync_error", "")
+    return render_template("settings.html", active_tab='settings',
+        garmin_email=garmin_email, last_sync=last_sync, sync_error=sync_error)
+
+
+@app.route("/settings/garmin", methods=["POST"])
+@login_required
+def settings_garmin_save():
+    email = request.form.get("garmin_email", "").strip()
+    password = request.form.get("garmin_password", "").strip()
+    if email:
+        set_config("garmin_email", email)
+    if password:
+        set_config("garmin_password", password)
+    # Trigger full sync (last 365 days) in background
+    days = int(request.form.get("days_back", 365))
+    t = threading.Thread(target=_sync_and_store_error, args=(days,), daemon=True)
+    t.start()
+    return redirect(url_for("settings_view"))
+
+
+@app.route("/settings/garmin/sync", methods=["POST"])
+@login_required
+def settings_garmin_sync():
+    days = int(request.form.get("days_back", 30))
+    t = threading.Thread(target=_sync_and_store_error, args=(days,), daemon=True)
+    t.start()
+    return redirect(url_for("settings_view"))
+
+
+def _sync_and_store_error(days):
+    err = garmin_sync(days)
+    set_config("sync_error", err or "")
 
 
 @app.route("/download/db")
@@ -506,9 +570,7 @@ def download_db():
 def download_xml():
     from flask import Response
     db = get_db()
-    rows = db.execute(
-        "SELECT date, weight, comment FROM entries ORDER BY date ASC"
-    ).fetchall()
+    rows = db.execute("SELECT date, weight, comment FROM entries ORDER BY date ASC").fetchall()
     lines = ['<?xml version="1.0" encoding="UTF-8"?>', '<hackdiet>']
     cur_ym = None
     for r in rows:
@@ -524,8 +586,7 @@ def download_xml():
     if cur_ym is not None:
         lines.append('  </monthlog>')
     lines.append('</hackdiet>')
-    xml = "\n".join(lines)
-    return Response(xml, mimetype="application/xml",
+    return Response("\n".join(lines), mimetype="application/xml",
         headers={"Content-Disposition": "attachment; filename=hackdiet_db.xml"})
 
 

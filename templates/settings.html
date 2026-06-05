@@ -5,9 +5,68 @@
 {% block content %}
 <h1 class="c">Settings</h1>
 
+<table class="trendan" style="width:100%; max-width:560px;">
+  <thead>
+    <tr><th class="custitle" colspan="2">Garmin Connect</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td colspan="2" style="padding:10px 16px;">
+        {% if sync_error %}
+        <p style="color:#cc0000; font-size:0.82rem; margin:0 0 8px;">Errore sync: {{ sync_error }}</p>
+        {% endif %}
+        {% if last_sync != 'Mai' %}
+        <p style="color:#555; font-size:0.82rem; margin:0 0 8px;">Ultima sincronizzazione: <strong>{{ last_sync }}</strong></p>
+        {% endif %}
+        <form method="post" action="{{ url_for('settings_garmin_save') }}">
+          <table style="border-collapse:collapse;">
+            <tr>
+              <td style="padding:4px 8px 4px 0; font-size:0.85rem;">Email:</td>
+              <td style="padding:4px 0;">
+                <input type="email" name="garmin_email" value="{{ garmin_email }}"
+                  style="font-size:0.85rem; padding:3px 6px; border:1px solid #999; width:220px;">
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:4px 8px 4px 0; font-size:0.85rem;">Password:</td>
+              <td style="padding:4px 0;">
+                <input type="password" name="garmin_password" placeholder="(invariata)"
+                  style="font-size:0.85rem; padding:3px 6px; border:1px solid #999; width:220px;">
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:4px 8px 4px 0; font-size:0.85rem;">Sincronizza ultimi:</td>
+              <td style="padding:4px 0;">
+                <select name="days_back" style="font-size:0.85rem; padding:2px 4px;">
+                  <option value="30">30 giorni</option>
+                  <option value="90">90 giorni</option>
+                  <option value="365" selected>1 anno</option>
+                  <option value="1825">5 anni</option>
+                  <option value="9999">Tutto</option>
+                </select>
+              </td>
+            </tr>
+            <tr>
+              <td colspan="2" style="padding:10px 0 4px;">
+                <input type="submit" value=" Salva e sincronizza " class="btn-settings">
+              </td>
+            </tr>
+          </table>
+        </form>
+        <form method="post" action="{{ url_for('settings_garmin_sync') }}" style="margin-top:6px;">
+          <input type="hidden" name="days_back" value="30">
+          <input type="submit" value=" Sync ora (30 giorni) " class="btn-settings-secondary">
+        </form>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<br>
+
 <table class="trendan">
   <thead>
-    <tr><th class="custitle">Data</th></tr>
+    <tr><th class="custitle">Download dati</th></tr>
   </thead>
   <tbody>
     <tr>
