@@ -103,13 +103,9 @@ def garmin_sync(days_back=30):
         while cur <= end:
             ds = cur.isoformat()
             try:
-                nutrition = client.get_nutrition_day(ds)
-                kcal = None
-                if nutrition:
-                    kcal = (nutrition.get("totalCalories") or
-                            nutrition.get("calories") or
-                            nutrition.get("netCalories"))
-                if kcal is not None:
+                stats = client.get_stats(ds)
+                kcal = stats.get("consumedKilocalories") if stats else None
+                if kcal is not None and int(kcal) > 0:
                     existing = db.execute("SELECT id FROM entries WHERE date=?", (ds,)).fetchone()
                     if existing:
                         db.execute("UPDATE entries SET kcal=? WHERE date=?", (int(kcal), ds))
