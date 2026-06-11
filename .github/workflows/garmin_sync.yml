@@ -1,0 +1,28 @@
+name: Garmin → Dropbox Sync
+
+on:
+  schedule:
+    - cron: '0 1 * * *'  # ogni notte all'1:00 UTC (3:00 ora italiana)
+  workflow_dispatch:       # consente avvio manuale dal sito GitHub
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install garminconnect requests
+
+      - name: Run sync
+        env:
+          GARMIN_EMAIL: ${{ secrets.GARMIN_EMAIL }}
+          GARMIN_PASSWORD: ${{ secrets.GARMIN_PASSWORD }}
+          DROPBOX_TOKEN: ${{ secrets.DROPBOX_TOKEN }}
+        run: python garmin_sync_ci.py
