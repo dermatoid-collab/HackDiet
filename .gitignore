@@ -4,3 +4,4 @@ hackdiet.db
 *.db
 .env
 sync_config.json
+garmin_token.json

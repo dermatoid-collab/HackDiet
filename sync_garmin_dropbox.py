@@ -5,9 +5,10 @@ Configurazione: crea un file sync_config.json nella stessa cartella con:
     "garmin_email": "tua@email.com",
     "garmin_password": "tuapassword",
     "dropbox_token": "il_tuo_token",
-    "days_back": 365,
+    "days_back": 30,
     "db_path": "H:/hackdiet/hackdiet.db"
 }
+Il token Garmin viene salvato automaticamente in garmin_token.json dopo il primo login.
 """
 
 import json
@@ -17,6 +18,7 @@ from datetime import date, timedelta
 from pathlib import Path
 
 CONFIG_FILE = Path(__file__).parent / "sync_config.json"
+TOKEN_FILE = Path(__file__).parent / "garmin_token.json"
 DROPBOX_PATH = "/hackdiet_kcal.json"
 
 
@@ -25,12 +27,35 @@ def load_config():
         return json.load(f)
 
 
-def sync_garmin(cfg):
+def garmin_login(cfg):
     from garminconnect import Garmin
-    client = Garmin(cfg["garmin_email"], cfg["garmin_password"])
-    client.login()
+    email = cfg["garmin_email"]
+    password = cfg["garmin_password"]
 
-    days_back = cfg.get("days_back", 365)
+    # Try saved token first
+    if TOKEN_FILE.exists():
+        try:
+            tokenstore = TOKEN_FILE.read_text()
+            client = Garmin(email, password)
+            client.garth.loads(tokenstore)
+            client.display_name  # test validity
+            print("  Login con token salvato — nessuna chiamata di autenticazione")
+            return client
+        except Exception as e:
+            print(f"  Token scaduto ({e}), rifare login completo...")
+
+    # Full login with password
+    client = Garmin(email, password)
+    client.login()
+    TOKEN_FILE.write_text(client.garth.dumps())
+    print("  Login con password riuscito, token salvato")
+    return client
+
+
+def sync_garmin(cfg):
+    client = garmin_login(cfg)
+
+    days_back = cfg.get("days_back", 30)
     end = date.today()
     start = end - timedelta(days=days_back)
 

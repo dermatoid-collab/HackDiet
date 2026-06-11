@@ -82,15 +82,33 @@ def set_config(key, value):
     db.close()
 
 
+def garmin_login():
+    """Login to Garmin, using saved token if available. Returns client."""
+    from garminconnect import Garmin
+    email = get_config("garmin_email")
+    password = get_config("garmin_password")
+    tokenstore = get_config("garmin_token")
+    if tokenstore:
+        try:
+            client = Garmin(email, password, session_timeout=10)
+            client.garth.loads(tokenstore)
+            client.display_name  # test token validity
+            return client
+        except Exception:
+            pass
+    client = Garmin(email, password)
+    client.login()
+    set_config("garmin_token", client.garth.dumps())
+    return client
+
+
 def garmin_sync(days_back=30):
     email = get_config("garmin_email")
     password = get_config("garmin_password")
     if not email or not password:
         return "Credenziali Garmin non configurate."
     try:
-        from garminconnect import Garmin
-        client = Garmin(email, password)
-        client.login()
+        client = garmin_login()
 
         end = date.today()
         start = end - timedelta(days=days_back)
@@ -128,17 +146,15 @@ def garmin_sync(days_back=30):
 def garmin_test():
     """Returns diagnostic info as a string."""
     email = get_config("garmin_email")
-    password = get_config("garmin_password")
-    if not email or not password:
+    if not email:
         return "❌ Credenziali non configurate."
     lines = []
     try:
-        from garminconnect import Garmin
         lines.append("✅ garminconnect importato")
-        client = Garmin(email, password)
+        tokenstore = get_config("garmin_token")
         lines.append(f"✅ Client creato per {email}")
-        client.login()
-        lines.append("✅ Login riuscito")
+        client = garmin_login()
+        lines.append(f"✅ Login riuscito {'(token)' if tokenstore else '(password)'}")
         today_s = date.today().isoformat()
         try:
             nutrition = client.get_nutrition_day(today_s)
