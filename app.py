@@ -635,8 +635,9 @@ def dropbox_download_kcal(token):
     headers = {
         "Authorization": f"Bearer {token}",
         "Dropbox-API-Arg": _json.dumps({"path": DROPBOX_PATH}),
+        "Content-Type": "",
     }
-    r = req.post("https://content.dropboxapi.com/2/files/download", headers=headers, timeout=30)
+    r = req.post("https://content.dropboxapi.com/2/files/download", headers=headers, data=b"", timeout=30)
     r.raise_for_status()
     return r.json()
 
