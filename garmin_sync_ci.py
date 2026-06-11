@@ -8,7 +8,7 @@ import requests
 from datetime import date, timedelta
 
 DROPBOX_PATH = "/hackdiet_kcal.json"
-DAYS_BACK = 60
+DAYS_BACK = 7
 
 
 def garmin_login():
