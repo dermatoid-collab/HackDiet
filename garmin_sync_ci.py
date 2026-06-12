@@ -66,8 +66,23 @@ def sync_sleep(client):
     return sleep_map
 
 
-def upload_to_dropbox(path, data_map):
-    token = os.environ["DROPBOX_TOKEN"]
+def get_dropbox_access_token():
+    """Ottiene un access token fresco usando il refresh token."""
+    r = requests.post(
+        "https://api.dropboxapi.com/oauth2/token",
+        data={
+            "grant_type": "refresh_token",
+            "refresh_token": os.environ["DROPBOX_REFRESH_TOKEN"],
+            "client_id": os.environ["DROPBOX_APP_KEY"],
+            "client_secret": os.environ["DROPBOX_APP_SECRET"],
+        },
+        timeout=15,
+    )
+    r.raise_for_status()
+    return r.json()["access_token"]
+
+
+def upload_to_dropbox(token, path, data_map):
     data = json.dumps(data_map).encode()
     headers = {
         "Authorization": f"Bearer {token}",
@@ -92,8 +107,10 @@ def main():
     sleep_map = sync_sleep(client)
     print(f"Trovati {len(sleep_map)} giorni con dati sonno")
 
-    upload_to_dropbox(DROPBOX_KCAL_PATH, kcal_map)
-    upload_to_dropbox(DROPBOX_SLEEP_PATH, sleep_map)
+    print("Ottengo access token Dropbox...")
+    dropbox_token = get_dropbox_access_token()
+    upload_to_dropbox(dropbox_token, DROPBOX_KCAL_PATH, kcal_map)
+    upload_to_dropbox(dropbox_token, DROPBOX_SLEEP_PATH, sleep_map)
     print("Fatto!")
 
 
