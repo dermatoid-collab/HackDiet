@@ -90,6 +90,14 @@
 </p>
 </form>
 
+<script>
+document.querySelectorAll('.winput').forEach(function(input) {
+  input.addEventListener('change', function() {
+    document.getElementById('monthlog').submit();
+  });
+});
+</script>
+
 {% if chart_labels %}
 <script>
 new Chart(document.getElementById('monthChart'), {
