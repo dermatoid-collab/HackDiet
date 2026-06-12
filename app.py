@@ -235,9 +235,8 @@ def login():
                 t = threading.Thread(target=_sync_and_store_error, args=(30,), daemon=True)
                 t.start()
             # Import kcal from Dropbox in background on every login
-            dropbox_token = get_config("dropbox_token")
-            if dropbox_token:
-                t2 = threading.Thread(target=_dropbox_import_and_store, args=(dropbox_token,), daemon=True)
+            if get_config("dropbox_refresh_token"):
+                t2 = threading.Thread(target=_dropbox_import_and_store, daemon=True)
                 t2.start()
             return redirect(url_for("index"))
         error = "Password errata."
@@ -574,12 +573,12 @@ def settings_view():
     garmin_email = get_config("garmin_email", "")
     last_sync = get_config("last_sync", "Mai")
     sync_error = get_config("sync_error", "")
-    dropbox_token = get_config("dropbox_token", "")
+    dropbox_configured = bool(get_config("dropbox_refresh_token", ""))
     dropbox_last_sync = get_config("dropbox_last_sync", "Mai")
     dropbox_sync_error = get_config("dropbox_sync_error", "")
     return render_template("settings.html", active_tab='settings',
         garmin_email=garmin_email, last_sync=last_sync, sync_error=sync_error,
-        dropbox_token=dropbox_token, dropbox_last_sync=dropbox_last_sync,
+        dropbox_configured=dropbox_configured, dropbox_last_sync=dropbox_last_sync,
         dropbox_sync_error=dropbox_sync_error)
 
 
@@ -613,20 +612,24 @@ def _sync_and_store_error(days):
     set_config("sync_error", f"{err}" if err else f"OK — {updated} giorni aggiornati")
 
 
-DROPBOX_PATH = "/hackdiet_kcal.json"
+DROPBOX_KCAL_PATH = "/hackdiet_kcal.json"
+DROPBOX_APP_KEY = "sln7rdtjj7fg1as"
+DROPBOX_APP_SECRET = "08v9t03wvicwxec"
 
 
-def dropbox_upload_kcal(token, kcal_map):
+def dropbox_get_access_token():
     import requests as req
-    import json as _json
-    data = _json.dumps(kcal_map).encode()
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Dropbox-API-Arg": _json.dumps({"path": DROPBOX_PATH, "mode": "overwrite", "autorename": False}),
-        "Content-Type": "application/octet-stream",
-    }
-    r = req.post("https://content.dropboxapi.com/2/files/upload", headers=headers, data=data, timeout=30)
+    refresh_token = get_config("dropbox_refresh_token")
+    if not refresh_token:
+        raise Exception("Dropbox refresh token non configurato")
+    r = req.post("https://api.dropboxapi.com/oauth2/token", data={
+        "grant_type": "refresh_token",
+        "refresh_token": refresh_token,
+        "client_id": DROPBOX_APP_KEY,
+        "client_secret": DROPBOX_APP_SECRET,
+    }, timeout=15)
     r.raise_for_status()
+    return r.json()["access_token"]
 
 
 def dropbox_download_kcal(token):
@@ -634,7 +637,7 @@ def dropbox_download_kcal(token):
     import json as _json
     headers = {
         "Authorization": f"Bearer {token}",
-        "Dropbox-API-Arg": _json.dumps({"path": DROPBOX_PATH}),
+        "Dropbox-API-Arg": _json.dumps({"path": DROPBOX_KCAL_PATH}),
         "Content-Type": "",
     }
     r = req.post("https://content.dropboxapi.com/2/files/download", headers=headers, data=b"", timeout=30)
@@ -642,8 +645,9 @@ def dropbox_download_kcal(token):
     return r.json()
 
 
-def _dropbox_import_and_store(token):
+def _dropbox_import_and_store(_ignored=None):
     try:
+        token = dropbox_get_access_token()
         kcal_map = dropbox_download_kcal(token)
         db = sqlite3.connect(DB_PATH)
         db.row_factory = sqlite3.Row
@@ -665,12 +669,11 @@ def _dropbox_import_and_store(token):
 @app.route("/settings/dropbox", methods=["POST"])
 @login_required
 def settings_dropbox_save():
-    token = request.form.get("dropbox_token", "").strip()
+    token = request.form.get("dropbox_refresh_token", "").strip()
     if token:
-        set_config("dropbox_token", token)
-    token = get_config("dropbox_token")
-    if token:
-        t = threading.Thread(target=_dropbox_import_and_store, args=(token,), daemon=True)
+        set_config("dropbox_refresh_token", token)
+    if get_config("dropbox_refresh_token"):
+        t = threading.Thread(target=_dropbox_import_and_store, daemon=True)
         t.start()
     return redirect(url_for("settings_view"))
 
@@ -678,9 +681,8 @@ def settings_dropbox_save():
 @app.route("/settings/dropbox/sync", methods=["POST"])
 @login_required
 def settings_dropbox_sync():
-    token = get_config("dropbox_token")
-    if token:
-        t = threading.Thread(target=_dropbox_import_and_store, args=(token,), daemon=True)
+    if get_config("dropbox_refresh_token"):
+        t = threading.Thread(target=_dropbox_import_and_store, daemon=True)
         t.start()
     return redirect(url_for("settings_view"))
 

@@ -21,10 +21,10 @@
         <form method="post" action="{{ url_for('settings_dropbox_save') }}">
           <table style="border-collapse:collapse;">
             <tr>
-              <td style="padding:4px 8px 4px 0; font-size:0.85rem;">Access Token:</td>
+              <td style="padding:4px 8px 4px 0; font-size:0.85rem;">Refresh Token:</td>
               <td style="padding:4px 0;">
-                <input type="password" name="dropbox_token"
-                  placeholder="{{ '(salvato)' if dropbox_token else '(inserisci token)' }}"
+                <input type="password" name="dropbox_refresh_token"
+                  placeholder="{{ '(configurato)' if dropbox_configured else '(inserisci token)' }}"
                   style="font-size:0.85rem; padding:3px 6px; border:1px solid #999; width:220px;">
               </td>
             </tr>
