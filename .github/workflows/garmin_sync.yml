@@ -2,7 +2,7 @@ name: Garmin → Dropbox Sync
 
 on:
   schedule:
-    - cron: '0 1 * * *'  # ogni notte all'1:00 UTC (3:00 ora italiana)
+    - cron: '0 22 * * *'  # ogni notte alle 22:00 UTC (mezzanotte ora italiana CEST)
   workflow_dispatch:       # consente avvio manuale dal sito GitHub
 
 jobs:
