@@ -9,7 +9,7 @@ from datetime import date, timedelta
 
 DROPBOX_KCAL_PATH = "/hackdiet_kcal.json"
 DROPBOX_SLEEP_PATH = "/hackdiet_sleep.json"
-DAYS_BACK = 7
+DAYS_BACK = int(os.environ.get("DAYS_BACK", 7))
 
 
 def garmin_login():
@@ -20,6 +20,19 @@ def garmin_login():
     client.login()
     print(f"Login Garmin riuscito per {email}")
     return client
+
+
+def download_from_dropbox(token, path):
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Dropbox-API-Arg": json.dumps({"path": path}),
+        "Content-Type": "",
+    }
+    r = requests.post("https://content.dropboxapi.com/2/files/download",
+                      headers=headers, data=b"", timeout=30)
+    if r.status_code == 200:
+        return r.json()
+    return {}
 
 
 def sync_kcal(client):
@@ -49,25 +62,38 @@ def sync_sleep(client):
     while cur <= end:
         ds = cur.isoformat()
         try:
+            stats = client.get_stats(ds)
+            rhr = stats.get("restingHeartRate") if stats else None
+
             data = client.get_sleep_data(ds)
+            entry = {}
             if data and "dailySleepDTO" in data:
                 dto = data["dailySleepDTO"]
-                deep = dto.get("deepSleepSeconds", 0)
-                rem = dto.get("remSleepSeconds", 0)
-                if deep or rem:
-                    sleep_map[ds] = {
-                        "deep": round(deep / 60),
-                        "rem": round(rem / 60),
-                    }
-                    print(f"  {ds}: deep={round(deep/60)}m rem={round(rem/60)}m")
+                deep = dto.get("deepSleepSeconds", 0) or 0
+                rem = dto.get("remSleepSeconds", 0) or 0
+                light = dto.get("lightSleepSeconds", 0) or 0
+                total = dto.get("sleepTimeSeconds", 0) or 0
+                if total:
+                    entry["total"] = round(total / 60)
+                if deep:
+                    entry["deep"] = round(deep / 60)
+                if rem:
+                    entry["rem"] = round(rem / 60)
+                if light:
+                    entry["light"] = round(light / 60)
+            if rhr:
+                entry["rhr"] = int(rhr)
+
+            if entry:
+                sleep_map[ds] = entry
+                print(f"  {ds}: {entry}")
         except Exception as e:
-            print(f"  {ds}: errore sonno - {e}")
+            print(f"  {ds}: errore sonno/rhr - {e}")
         cur += timedelta(days=1)
     return sleep_map
 
 
 def get_dropbox_access_token():
-    """Ottiene un access token fresco usando il refresh token."""
     r = requests.post(
         "https://api.dropboxapi.com/oauth2/token",
         data={
@@ -96,21 +122,28 @@ def upload_to_dropbox(token, path, data_map):
 
 
 def main():
-    print("=== Garmin → Dropbox CI Sync ===")
+    print(f"=== Garmin → Dropbox CI Sync (ultimi {DAYS_BACK} giorni) ===")
     client = garmin_login()
 
     print("Sync kcal...")
     kcal_map = sync_kcal(client)
     print(f"Trovati {len(kcal_map)} giorni con kcal")
 
-    print("Sync sonno...")
+    print("Sync sonno + RHR...")
     sleep_map = sync_sleep(client)
-    print(f"Trovati {len(sleep_map)} giorni con dati sonno")
+    print(f"Trovati {len(sleep_map)} giorni con dati sonno/RHR")
 
     print("Ottengo access token Dropbox...")
     dropbox_token = get_dropbox_access_token()
-    upload_to_dropbox(dropbox_token, DROPBOX_KCAL_PATH, kcal_map)
-    upload_to_dropbox(dropbox_token, DROPBOX_SLEEP_PATH, sleep_map)
+
+    # Merge con dati esistenti su Dropbox
+    existing_kcal = download_from_dropbox(dropbox_token, DROPBOX_KCAL_PATH)
+    existing_sleep = download_from_dropbox(dropbox_token, DROPBOX_SLEEP_PATH)
+    merged_kcal = {**existing_kcal, **kcal_map}
+    merged_sleep = {**existing_sleep, **sleep_map}
+
+    upload_to_dropbox(dropbox_token, DROPBOX_KCAL_PATH, merged_kcal)
+    upload_to_dropbox(dropbox_token, DROPBOX_SLEEP_PATH, merged_sleep)
     print("Fatto!")
 
 

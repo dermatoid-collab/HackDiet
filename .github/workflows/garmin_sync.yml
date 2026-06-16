@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: '0 22 * * *'  # ogni notte alle 22:00 UTC (mezzanotte ora italiana CEST)
   workflow_dispatch:       # consente avvio manuale dal sito GitHub
+    inputs:
+      days_back:
+        description: 'Giorni da scaricare (default 7)'
+        required: false
+        default: '7'
 
 jobs:
   sync:
@@ -27,4 +32,5 @@ jobs:
           DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
           DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY }}
           DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET }}
+          DAYS_BACK: ${{ github.event.inputs.days_back || '7' }}
         run: python garmin_sync_ci.py
