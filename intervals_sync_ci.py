@@ -56,6 +56,7 @@ def summarize_activity(a):
     ]
     return {
         "id": a.get("id"),
+        "name": a.get("name"),
         "type": a.get("type"),
         "indoor": a.get("trainer"),
         "start_time": a.get("start_date_local"),
