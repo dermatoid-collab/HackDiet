@@ -1,0 +1,36 @@
+name: Intervals.icu → Dropbox Daily Brief
+
+on:
+  schedule:
+    - cron: '0 5 * * *'  # ogni mattina alle 5:00 UTC (7:00 ora italiana CEST)
+  workflow_dispatch:
+    inputs:
+      days_back:
+        description: 'Giorni da elaborare (default 1)'
+        required: false
+        default: '1'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run sync
+        env:
+          INTERVALS_API_KEY: ${{ secrets.INTERVALS_API_KEY }}
+          INTERVALS_ATHLETE_ID: ${{ secrets.INTERVALS_ATHLETE_ID }}
+          DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
+          DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY }}
+          DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET }}
+          DAYS_BACK: ${{ github.event.inputs.days_back || '1' }}
+        run: python intervals_sync_ci.py
