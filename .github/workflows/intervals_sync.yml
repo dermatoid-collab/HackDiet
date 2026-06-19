@@ -2,7 +2,7 @@ name: Intervals.icu → Dropbox Daily Brief
 
 on:
   schedule:
-    - cron: '0 5 * * *'  # ogni mattina alle 5:00 UTC (7:00 ora italiana CEST)
+    - cron: '30 22 * * *'  # ogni notte alle 22:30 UTC (00:30 ora italiana CEST)
   workflow_dispatch:
     inputs:
       days_back:
