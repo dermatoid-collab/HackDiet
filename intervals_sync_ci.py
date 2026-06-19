@@ -96,6 +96,8 @@ def summarize_activity(a):
 def get_wellness(day):
     try:
         data = intervals_get(f"/athlete/{INTERVALS_ATHLETE_ID}/wellness/{day.isoformat()}")
+        if os.environ.get("DEBUG_WELLNESS"):
+            print(f"  DEBUG wellness {day}: {json.dumps(data)}")
         return data or {}
     except Exception as e:
         print(f"  errore wellness {day}: {e}")

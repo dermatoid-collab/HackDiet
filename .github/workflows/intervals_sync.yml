@@ -33,4 +33,5 @@ jobs:
           DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY }}
           DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET }}
           DAYS_BACK: ${{ github.event.inputs.days_back || '1' }}
+          DEBUG_WELLNESS: '1'
         run: python intervals_sync_ci.py
