@@ -96,12 +96,23 @@ def summarize_activity(a):
 def get_wellness(day):
     try:
         data = intervals_get(f"/athlete/{INTERVALS_ATHLETE_ID}/wellness/{day.isoformat()}")
-        if os.environ.get("DEBUG_WELLNESS"):
-            print(f"  DEBUG wellness {day}: {json.dumps(data)}")
         return data or {}
     except Exception as e:
         print(f"  errore wellness {day}: {e}")
         return {}
+
+
+def parse_hm_to_minutes(s):
+    if not s:
+        return None
+    h = 0
+    m = 0
+    if "h" in s:
+        h_part, s = s.split("h")
+        h = int(h_part)
+    if "m" in s:
+        m = int(s.replace("m", "") or 0)
+    return h * 60 + m
 
 
 def get_notes(day):
@@ -138,12 +149,14 @@ def build_day_brief(yesterday, today):
         },
         "wellness_today": {
             "sleep_secs": wellness_today.get("sleepSecs"),
-            "deep_sleep_secs": wellness_today.get("deepSleepSecs") or wellness_today.get("extra", {}).get("deep_sleep"),
-            "rem_sleep_secs": wellness_today.get("remSleepSecs") or wellness_today.get("extra", {}).get("rem_sleep"),
+            "deep_sleep_min": parse_hm_to_minutes(wellness_today.get("DeepSleep")),
+            "rem_sleep_min": parse_hm_to_minutes(wellness_today.get("REMSleep")),
             "resting_hr": wellness_today.get("restingHR"),
             "hrv": wellness_today.get("hrv"),
             "hrv_sdnn": wellness_today.get("hrvSDNN"),
+            "hrv_score": wellness_today.get("HRVScore"),
             "sleep_quality": wellness_today.get("sleepQuality"),
+            "body_battery_min": wellness_today.get("BodyBatteryMin"),
         },
         "fitness": {
             "ctl": wellness_today.get("ctl"),
