@@ -81,6 +81,9 @@ def sync_sleep(client):
                     entry["rem"] = round(rem / 60)
                 if light:
                     entry["light"] = round(light / 60)
+                awake = dto.get("awakeSleepSeconds", 0) or 0
+                if awake:
+                    entry["awake"] = round(awake / 60)
             if rhr:
                 entry["rhr"] = int(rhr)
 
